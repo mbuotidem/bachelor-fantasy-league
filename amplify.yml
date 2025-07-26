@@ -1,13 +1,4 @@
 version: 1
-backend:
-  phases:
-    preBuild:
-      commands:
-        - nvm use 20
-        - npm ci
-    build:
-      commands:
-        - npx ampx generate outputs --app-id $AWS_APP_ID --branch $AWS_BRANCH
 frontend:
   phases:
     preBuild:
