@@ -1,14 +1,18 @@
 version: 1
 backend:
   phases:
+    preBuild:
+      commands:
+        - nvm use 20
+        - npm ci
     build:
       commands:
-        - npm ci
         - npx ampx generate outputs --branch $AWS_BRANCH
 frontend:
   phases:
     preBuild:
       commands:
+        - nvm use 20
         - npm ci
     build:
       commands:
