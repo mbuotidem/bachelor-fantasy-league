@@ -5,7 +5,10 @@ import amplifyConfig from '../../amplify_outputs.json';
 
 // Configure Amplify immediately when this module is loaded on the client
 if (typeof window !== 'undefined') {
-    Amplify.configure(amplifyConfig);
+    import('../../amplify_outputs.json').then((amplifyConfig) => {
+        Amplify.configure(amplifyConfig.default);
+    }).catch((error) => {
+       console.error("Failed to load Amplify configuration:", error);
+    });
 }
-
 export default Amplify;

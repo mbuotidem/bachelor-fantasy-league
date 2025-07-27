@@ -8,7 +8,7 @@ jest.mock('aws-amplify/auth', () => ({
 }));
 
 jest.mock('@aws-amplify/ui-react', () => ({
-  Authenticator: ({ children }: { children: any }) => {
+  Authenticator: () => {
     // Mock unauthenticated state - show sign in form
     return (
       <div data-testid="authenticator">

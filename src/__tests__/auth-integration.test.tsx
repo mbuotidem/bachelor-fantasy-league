@@ -4,7 +4,7 @@ import Home from '../app/page';
 
 // Mock Amplify UI React
 jest.mock('@aws-amplify/ui-react', () => ({
-  Authenticator: ({ children }: { children: any }) => {
+  Authenticator: ({ children }: { children: React.ReactNode | ((props: { signOut: () => void; user: { userId: string; signInDetails: { loginId: string } } }) => React.ReactNode) }) => {
     // Mock authenticated state
     const mockUser = {
       userId: 'test-user-123',
