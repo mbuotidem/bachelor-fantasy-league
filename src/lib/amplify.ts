@@ -4,8 +4,7 @@ import { Amplify } from 'aws-amplify';
 let amplifyConfig = {};
 
 try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const outputs = require('../../amplify_outputs.json');
+    const outputs = await import('../../amplify_outputs.json');
     amplifyConfig = outputs;
 } catch {
     console.warn('amplify_outputs.json not found, Amplify will use default configuration');

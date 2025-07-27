@@ -35,6 +35,6 @@ test.describe('Bachelor Fantasy League App', () => {
     // await expect(page).toHaveURL(/.*login/)
     
     // For now, just verify we can navigate to the home page
-    await expect(page.url()).toContain('localhost:3000')
+    await expect(page).toHaveURL(/\/$/)
   })
 })

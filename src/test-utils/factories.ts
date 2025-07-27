@@ -59,20 +59,19 @@ export interface ScoringEvent {
 
 // Factory functions
 export const createMockUser = (overrides: Partial<User> = {}): User => ({
-  id: `user-${Math.random().toString(36).substr(2, 9)}`,
-  email: `test${Math.random().toString(36).substr(2, 5)}@example.com`,
-  displayName: `Test User ${Math.random().toString(36).substr(2, 5)}`,
+  id: `user-${Math.random().toString(36).slice(2, 11)}`,
+  email: `test${Math.random().toString(36).slice(2, 7)}@example.com`,
+  displayName: `Test User ${Math.random().toString(36).slice(2, 7)}`,
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
   ...overrides,
 })
-
 export const createMockLeague = (overrides: Partial<League> = {}): League => ({
-  id: `league-${Math.random().toString(36).substr(2, 9)}`,
-  name: `Test League ${Math.random().toString(36).substr(2, 5)}`,
+  id: `league-${Math.random().toString(36).slice(2, 11)}`,
+  name: `Test League ${Math.random().toString(36).slice(2, 7)}`,
   season: 'Grant Ellis - Season 29',
-  leagueCode: Math.random().toString(36).substr(2, 8).toUpperCase(),
-  commissionerId: `user-${Math.random().toString(36).substr(2, 9)}`,
+  leagueCode: Math.random().toString(36).slice(2, 10).toUpperCase(),
+  commissionerId: `user-${Math.random().toString(36).slice(2, 11)}`,
   status: 'draft',
   maxTeams: 20,
   createdAt: new Date().toISOString(),

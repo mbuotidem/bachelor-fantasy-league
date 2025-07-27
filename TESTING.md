@@ -154,7 +154,14 @@ The project includes GitHub Actions workflows for:
 - Automatic creation of mock Amplify configuration for CI environments
 
 ### CI Configuration Notes
-The CI workflow automatically creates a mock `amplify_outputs.json` file to handle cases where the Amplify backend isn't available during testing. This ensures builds and tests can run successfully in CI environments.
+The CI workflow uses a template file (`.github/amplify_outputs.template.json`) to create a mock `amplify_outputs.json` configuration for testing environments. This approach:
+
+- Provides a readable, maintainable mock configuration
+- Ensures consistent testing across all CI jobs  
+- Allows builds and tests to run successfully without requiring a live Amplify backend
+- Makes configuration changes trackable through version control
+
+See `.github/CI-README.md` for more details about CI configuration files.
 
 ## Coverage Requirements
 
