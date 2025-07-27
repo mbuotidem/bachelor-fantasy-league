@@ -151,6 +151,10 @@ The project includes GitHub Actions workflows for:
 - Running e2e tests on staging deployments
 - Generating coverage reports
 - Cross-browser testing
+- Automatic creation of mock Amplify configuration for CI environments
+
+### CI Configuration Notes
+The CI workflow automatically creates a mock `amplify_outputs.json` file to handle cases where the Amplify backend isn't available during testing. This ensures builds and tests can run successfully in CI environments.
 
 ## Coverage Requirements
 

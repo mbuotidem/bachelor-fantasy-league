@@ -49,7 +49,7 @@ export const mockSessionStorage = () => {
 }
 
 // Mock fetch for API calls
-export const mockFetch = (response: any, ok = true) => {
+export const mockFetch = (response: unknown, ok = true) => {
   global.fetch = jest.fn(() =>
     Promise.resolve({
       ok,
@@ -60,22 +60,14 @@ export const mockFetch = (response: any, ok = true) => {
 }
 
 // Mock GraphQL responses
-export const mockGraphQLResponse = (data: any, errors?: any[]) => ({
+export const mockGraphQLResponse = (data: unknown, errors?: unknown[]) => ({
   data,
   errors,
   extensions: {},
 })
 
-// Common assertions
-export const expectElementToBeVisible = (element: HTMLElement) => {
-  expect(element).toBeInTheDocument()
-  expect(element).toBeVisible()
-}
-
-export const expectElementToHaveText = (element: HTMLElement, text: string) => {
-  expect(element).toBeInTheDocument()
-  expect(element).toHaveTextContent(text)
-}
+// Common assertions helpers are available through jest-dom matchers
+// Use expect(element).toBeInTheDocument() directly in tests
 
 // Re-export everything from testing-library
 export * from '@testing-library/react'
