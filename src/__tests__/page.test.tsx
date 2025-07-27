@@ -1,4 +1,5 @@
-import { render, screen } from '@/test-utils/test-helpers'
+import { render, screen } from '@testing-library/react';
+import '@testing-library/jest-dom';
 
 // Mock Home component for testing
 const MockHome = () => {
