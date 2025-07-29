@@ -35,10 +35,16 @@ describe('Authentication Integration', () => {
     expect(screen.getByText('🌹 Bachelor Fantasy League')).toBeInTheDocument();
     expect(screen.getByText('Welcome back, test@example.com!')).toBeInTheDocument();
     expect(screen.getByText('Authentication system working')).toBeInTheDocument();
-    expect(screen.getByText('User logged in successfully')).toBeInTheDocument();
-    expect(screen.getByText('Email: test@example.com')).toBeInTheDocument();
-    expect(screen.getByText('User ID: test-user-123')).toBeInTheDocument();
+    expect(screen.getByText('Data models implemented')).toBeInTheDocument();
+    expect(screen.getByText('Validation working')).toBeInTheDocument();
+    expect(screen.getByText('TypeScript interfaces active')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Sign Out' })).toBeInTheDocument();
+    
+    // Check that the data model demo is rendered
+    expect(screen.getByText('Data Models Demo')).toBeInTheDocument();
+    expect(screen.getByText('Create League')).toBeInTheDocument();
+    expect(screen.getByText('Create Team')).toBeInTheDocument();
+    expect(screen.getByText('Create Contestant')).toBeInTheDocument();
   });
 
   it('renders with proper styling and layout', () => {
