@@ -1,16 +1,16 @@
 'use client'
 
 import React, { useState } from 'react'
-import { 
-  CreateLeagueInput, 
-  CreateTeamInput, 
+import {
+  CreateLeagueInput,
+  CreateTeamInput,
   CreateContestantInput,
-  ValidationResult 
+  ValidationResult
 } from '../types'
-import { 
-  validateCreateLeagueInput, 
-  validateCreateTeamInput, 
-  validateCreateContestantInput 
+import {
+  validateCreateLeagueInput,
+  validateCreateTeamInput,
+  validateCreateContestantInput
 } from '../lib/validation'
 
 export const DataModelDemo: React.FC = () => {
@@ -79,9 +79,8 @@ export const DataModelDemo: React.FC = () => {
               type="text"
               value={leagueData.name}
               onChange={(e) => handleLeagueChange('name', e.target.value)}
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                getFieldError(leagueValidation, 'name') ? 'border-red-500' : 'border-gray-300'
-              }`}
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${getFieldError(leagueValidation, 'name') ? 'border-red-500' : 'border-gray-300'
+                }`}
               placeholder="Enter league name"
             />
             {getFieldError(leagueValidation, 'name') && (
@@ -99,9 +98,8 @@ export const DataModelDemo: React.FC = () => {
               type="text"
               value={leagueData.season}
               onChange={(e) => handleLeagueChange('season', e.target.value)}
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                getFieldError(leagueValidation, 'season') ? 'border-red-500' : 'border-gray-300'
-              }`}
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${getFieldError(leagueValidation, 'season') ? 'border-red-500' : 'border-gray-300'
+                }`}
               placeholder="e.g., Grant Ellis 2025"
             />
             {getFieldError(leagueValidation, 'season') && (
@@ -138,9 +136,8 @@ export const DataModelDemo: React.FC = () => {
               type="text"
               value={teamData.name}
               onChange={(e) => handleTeamChange('name', e.target.value)}
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                getFieldError(teamValidation, 'name') ? 'border-red-500' : 'border-gray-300'
-              }`}
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${getFieldError(teamValidation, 'name') ? 'border-red-500' : 'border-gray-300'
+                }`}
               placeholder="Enter team name (try using < or > to see validation)"
             />
             {getFieldError(teamValidation, 'name') && (
@@ -178,9 +175,8 @@ export const DataModelDemo: React.FC = () => {
                 type="text"
                 value={contestantData.name}
                 onChange={(e) => handleContestantChange('name', e.target.value)}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  getFieldError(contestantValidation, 'name') ? 'border-red-500' : 'border-gray-300'
-                }`}
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${getFieldError(contestantValidation, 'name') ? 'border-red-500' : 'border-gray-300'
+                  }`}
                 placeholder="Enter contestant name"
               />
               {getFieldError(contestantValidation, 'name') && (
@@ -198,9 +194,8 @@ export const DataModelDemo: React.FC = () => {
                 type="number"
                 value={contestantData.age || ''}
                 onChange={(e) => handleContestantChange('age', e.target.value ? parseInt(e.target.value) : undefined)}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  getFieldError(contestantValidation, 'age') ? 'border-red-500' : 'border-gray-300'
-                }`}
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${getFieldError(contestantValidation, 'age') ? 'border-red-500' : 'border-gray-300'
+                  }`}
                 placeholder="Enter age (try 15 to see validation)"
                 min="18"
                 max="65"
@@ -248,9 +243,8 @@ export const DataModelDemo: React.FC = () => {
             <textarea
               value={contestantData.bio || ''}
               onChange={(e) => handleContestantChange('bio', e.target.value)}
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                getFieldError(contestantValidation, 'bio') ? 'border-red-500' : 'border-gray-300'
-              }`}
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${getFieldError(contestantValidation, 'bio') ? 'border-red-500' : 'border-gray-300'
+                }`}
               placeholder="Enter bio (try typing more than 500 characters to see validation)"
               rows={3}
             />
@@ -283,9 +277,9 @@ export const DataModelDemo: React.FC = () => {
       <div className="bg-gray-50 p-6 rounded-lg border">
         <h2 className="text-xl font-semibold mb-4 text-gray-800">TypeScript Interfaces in Action</h2>
         <p className="text-gray-600 mb-4">
-          The forms above use strongly-typed TypeScript interfaces. Here's what the data looks like:
+          The forms above use strongly-typed TypeScript interfaces. Here&apos;s what the data looks like:
         </p>
-        
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <div>
             <h3 className="font-medium text-gray-700 mb-2">League Data:</h3>
@@ -293,14 +287,14 @@ export const DataModelDemo: React.FC = () => {
               {JSON.stringify(leagueData, null, 2)}
             </pre>
           </div>
-          
+
           <div>
             <h3 className="font-medium text-gray-700 mb-2">Team Data:</h3>
             <pre className="bg-white p-3 rounded border text-xs overflow-x-auto">
               {JSON.stringify(teamData, null, 2)}
             </pre>
           </div>
-          
+
           <div>
             <h3 className="font-medium text-gray-700 mb-2">Contestant Data:</h3>
             <pre className="bg-white p-3 rounded border text-xs overflow-x-auto">

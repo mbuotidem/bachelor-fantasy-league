@@ -122,7 +122,7 @@ describe('User Preferences Validation', () => {
   })
 
   test('validates theme options', () => {
-    const preferences = { ...validPreferences, theme: 'invalid' as any }
+    const preferences = { ...validPreferences, theme: 'invalid' as UserPreferences['theme'] }
     const result = validateUserPreferences(preferences)
     expect(result.isValid).toBe(false)
     expect(result.errors).toContainEqual({
@@ -220,7 +220,7 @@ describe('League Validation', () => {
   })
 
   test('validates league status', () => {
-    const league = { ...validLeague, status: 'invalid' as any }
+    const league = { ...validLeague, status: 'invalid' as League['status'] }
     const result = validateLeague(league)
     expect(result.isValid).toBe(false)
     expect(result.errors).toContainEqual({
@@ -263,7 +263,7 @@ describe('League Settings Validation', () => {
   })
 
   test('validates draft format', () => {
-    const settings = { ...validSettings, draftFormat: 'invalid' as any }
+    const settings = { ...validSettings, draftFormat: 'invalid' as LeagueSettings['draftFormat'] }
     const result = validateLeagueSettings(settings)
     expect(result.isValid).toBe(false)
     expect(result.errors).toContainEqual({
@@ -311,7 +311,7 @@ describe('Scoring Rule Validation', () => {
   })
 
   test('validates category', () => {
-    const rule = { ...validScoringRule, category: 'invalid' as any }
+    const rule = { ...validScoringRule, category: 'invalid' as ScoringRule['category'] }
     const result = validateScoringRule(rule)
     expect(result.isValid).toBe(false)
     expect(result.errors).toContainEqual({
@@ -510,7 +510,7 @@ describe('Draft Validation', () => {
   })
 
   test('validates draft status', () => {
-    const draft = { ...validDraft, status: 'invalid' as any }
+    const draft = { ...validDraft, status: 'invalid' as Draft['status'] }
     const result = validateDraft(draft)
     expect(result.isValid).toBe(false)
     expect(result.errors).toContainEqual({

@@ -4,7 +4,7 @@ import {
   User, League, Team, Contestant, Draft, Episode, ScoringEvent,
   CreateLeagueInput, CreateTeamInput, CreateContestantInput, ScoreActionInput,
   ValidationResult, ValidationError, UserPreferences, LeagueSettings,
-  ScoringRule, DraftSettings
+  ScoringRule
 } from '../types'
 
 // Validation utility functions
@@ -33,7 +33,7 @@ const createValidationError = (field: string, message: string, code: string): Va
   code
 })
 
-const validateRequired = (value: any, fieldName: string): ValidationError | null => {
+const validateRequired = (value: unknown, fieldName: string): ValidationError | null => {
   if (value === undefined || value === null || value === '') {
     return createValidationError(fieldName, `${fieldName} is required`, 'REQUIRED')
   }
@@ -178,9 +178,9 @@ export const validateLeague = (league: Partial<League>): ValidationResult => {
   const errors: ValidationError[] = []
 
   // Required fields
-  const requiredFields = ['id', 'name', 'season', 'leagueCode', 'commissionerId', 'status']
+  const requiredFields: (keyof League)[] = ['id', 'name', 'season', 'leagueCode', 'commissionerId', 'status']
   requiredFields.forEach(field => {
-    const error = validateRequired((league as any)[field], field)
+    const error = validateRequired(league[field], field)
     if (error) errors.push(error)
   })
 
@@ -310,9 +310,9 @@ export const validateTeam = (team: Partial<Team>): ValidationResult => {
   const errors: ValidationError[] = []
 
   // Required fields
-  const requiredFields = ['id', 'leagueId', 'ownerId', 'name']
+  const requiredFields: (keyof Team)[] = ['id', 'leagueId', 'ownerId', 'name']
   requiredFields.forEach(field => {
-    const error = validateRequired((team as any)[field], field)
+    const error = validateRequired(team[field], field)
     if (error) errors.push(error)
   })
 
@@ -390,9 +390,9 @@ export const validateContestant = (contestant: Partial<Contestant>): ValidationR
   const errors: ValidationError[] = []
 
   // Required fields
-  const requiredFields = ['id', 'leagueId', 'name']
+  const requiredFields: (keyof Contestant)[] = ['id', 'leagueId', 'name']
   requiredFields.forEach(field => {
-    const error = validateRequired((contestant as any)[field], field)
+    const error = validateRequired(contestant[field], field)
     if (error) errors.push(error)
   })
 
@@ -424,9 +424,9 @@ export const validateDraft = (draft: Partial<Draft>): ValidationResult => {
   const errors: ValidationError[] = []
 
   // Required fields
-  const requiredFields = ['id', 'leagueId', 'status']
+  const requiredFields: (keyof Draft)[] = ['id', 'leagueId', 'status']
   requiredFields.forEach(field => {
-    const error = validateRequired((draft as any)[field], field)
+    const error = validateRequired(draft[field], field)
     if (error) errors.push(error)
   })
 
@@ -465,9 +465,9 @@ export const validateEpisode = (episode: Partial<Episode>): ValidationResult => 
   const errors: ValidationError[] = []
 
   // Required fields
-  const requiredFields = ['id', 'leagueId', 'episodeNumber']
+  const requiredFields: (keyof Episode)[] = ['id', 'leagueId', 'episodeNumber']
   requiredFields.forEach(field => {
-    const error = validateRequired((episode as any)[field], field)
+    const error = validateRequired(episode[field], field)
     if (error) errors.push(error)
   })
 
@@ -493,9 +493,9 @@ export const validateScoreActionInput = (input: ScoreActionInput): ValidationRes
   const errors: ValidationError[] = []
 
   // Required fields
-  const requiredFields = ['episodeId', 'contestantId', 'actionType', 'points']
+  const requiredFields: (keyof ScoreActionInput)[] = ['episodeId', 'contestantId', 'actionType', 'points']
   requiredFields.forEach(field => {
-    const error = validateRequired((input as any)[field], field)
+    const error = validateRequired(input[field], field)
     if (error) errors.push(error)
   })
 
@@ -527,9 +527,9 @@ export const validateScoringEvent = (event: Partial<ScoringEvent>): ValidationRe
   const errors: ValidationError[] = []
 
   // Required fields
-  const requiredFields = ['id', 'episodeId', 'contestantId', 'actionType', 'points', 'timestamp', 'scoredBy']
+  const requiredFields: (keyof ScoringEvent)[] = ['id', 'episodeId', 'contestantId', 'actionType', 'points', 'timestamp', 'scoredBy']
   requiredFields.forEach(field => {
-    const error = validateRequired((event as any)[field], field)
+    const error = validateRequired(event[field], field)
     if (error) errors.push(error)
   })
 
