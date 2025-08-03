@@ -24,7 +24,7 @@ const isValidUrl = (url: string): boolean => {
 
 const isValidDate = (dateString: string): boolean => {
   const date = new Date(dateString)
-  return !isNaN(date.getTime()) && dateString === date.toISOString()
+  return !isNaN(date.getTime())
 }
 
 const createValidationError = (field: string, message: string, code: string): ValidationError => ({

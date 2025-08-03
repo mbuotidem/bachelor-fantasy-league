@@ -11,6 +11,9 @@ const schema = a.schema({
       email: a.string().required(),
       displayName: a.string().required(),
       preferences: a.json(),
+
+      // Relationships
+      commissionedLeagues: a.hasMany('League', 'commissionerId'),
     })
     .authorization((allow) => [
       allow.owner(),
@@ -28,6 +31,7 @@ const schema = a.schema({
       status: a.enum(['created', 'draft_in_progress', 'active', 'completed', 'archived']),
 
       // Relationships
+      commissioner: a.belongsTo('User', 'commissionerId'),
       teams: a.hasMany('Team', 'leagueId'),
       contestants: a.hasMany('Contestant', 'leagueId'),
       episodes: a.hasMany('Episode', 'leagueId'),

@@ -101,6 +101,23 @@ describe('User Validation', () => {
       code: 'INVALID_DATE'
     })
   })
+
+  test('accepts various valid date formats', () => {
+    const validDates = [
+      '2024-01-01T00:00:00.000Z', // ISO string
+      '2024-01-01', // Date only
+      '01/01/2024', // US format
+      'January 1, 2024', // Long format
+      '2024-01-01T12:30:00', // ISO without timezone
+      new Date().toISOString() // Current date
+    ]
+
+    validDates.forEach(dateString => {
+      const user = { ...validUser, createdAt: dateString }
+      const result = validateUser(user)
+      expect(result.isValid).toBe(true)
+    })
+  })
 })
 
 describe('User Preferences Validation', () => {

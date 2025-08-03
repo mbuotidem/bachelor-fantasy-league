@@ -181,7 +181,8 @@ export interface UpdateUserPreferencesInput {
 export interface AuthResult {
   user: User
   accessToken: string
-  refreshToken: string
+  // Note: Refresh tokens are handled separately for security
+  // They should be stored in httpOnly cookies or secure storage
 }
 
 export interface DraftUpdate {
