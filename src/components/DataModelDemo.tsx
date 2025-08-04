@@ -214,7 +214,7 @@ export default function DataModelDemo() {
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6">Bachelor Fantasy League - Data Model Demo</h1>
+      <h1 className="text-3xl font-bold mb-6">Data Models Demo</h1>
 
       {state.error && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
