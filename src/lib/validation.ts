@@ -17,7 +17,8 @@ const isValidUrl = (url: string): boolean => {
   try {
     new URL(url)
     return true
-  } catch {
+  } catch (error) {
+    console.debug('Invalid URL format:', url, error);
     return false
   }
 }

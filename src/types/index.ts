@@ -152,6 +152,7 @@ export interface CreateLeagueInput {
 export interface CreateTeamInput {
   leagueId: string
   name: string
+  ownerId?: string // Optional - if not provided, will use current authenticated user
 }
 
 export interface CreateContestantInput {

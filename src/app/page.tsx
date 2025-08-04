@@ -3,7 +3,7 @@
 import { Authenticator, ThemeProvider } from '@aws-amplify/ui-react';
 import '@aws-amplify/ui-react/styles.css';
 import { authTheme } from '../lib/auth-theme';
-import { DataModelDemo } from '../components/DataModelDemo';
+import DataModelDemo from '../components/DataModelDemo';
 
 export default function Home() {
   return (
