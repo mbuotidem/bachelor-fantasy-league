@@ -15,6 +15,17 @@ jest.mock('../lib/api-client', () => ({
   }
 }));
 
+// Mock auth utilities
+jest.mock('../lib/auth-utils', () => ({
+  getCurrentUserId: jest.fn().mockResolvedValue('test-user-123'),
+  getCurrentUserDetails: jest.fn().mockResolvedValue({
+    userId: 'test-user-123',
+    username: 'testuser',
+    signInDetails: { loginId: 'test@example.com' }
+  }),
+  isAuthenticated: jest.fn().mockResolvedValue(true)
+}));
+
 // Test implementation of BaseService
 class TestService extends BaseService {
   async testOperation() {
@@ -29,6 +40,11 @@ class TestService extends BaseService {
     });
   }
 
+  // Public method to test withRetry with custom operation
+  async testWithRetry<T>(operation: () => Promise<T>, retryConfig?: any) {
+    return this.withRetry(operation, retryConfig);
+  }
+
   async testValidation(data: Record<string, any>, requiredFields: string[]) {
     this.validateRequired(data, requiredFields);
     return 'validation passed';
@@ -40,6 +56,10 @@ class TestService extends BaseService {
 
   async testHandleResponse(response: { data?: any; errors?: any[] }) {
     return this.handleResponse(response);
+  }
+
+  async testGetCurrentUserId() {
+    return this.getCurrentUserId();
   }
 }
 
@@ -54,7 +74,7 @@ describe('BaseService', () => {
   describe('Error Classes', () => {
     it('should create APIError with correct properties', () => {
       const error = new APIError('Test message', 500, 'TEST_CODE');
-      
+
       expect(error.message).toBe('Test message');
       expect(error.statusCode).toBe(500);
       expect(error.code).toBe('TEST_CODE');
@@ -63,7 +83,7 @@ describe('BaseService', () => {
 
     it('should create ValidationError with correct properties', () => {
       const error = new ValidationError('Validation failed', 'email');
-      
+
       expect(error.message).toBe('Validation failed');
       expect(error.statusCode).toBe(400);
       expect(error.code).toBe('VALIDATION_ERROR');
@@ -73,7 +93,7 @@ describe('BaseService', () => {
 
     it('should create NotFoundError with correct properties', () => {
       const error = new NotFoundError('User', '123');
-      
+
       expect(error.message).toBe('User with id 123 not found');
       expect(error.statusCode).toBe(404);
       expect(error.code).toBe('NOT_FOUND');
@@ -82,7 +102,7 @@ describe('BaseService', () => {
 
     it('should create UnauthorizedError with correct properties', () => {
       const error = new UnauthorizedError();
-      
+
       expect(error.message).toBe('Unauthorized access');
       expect(error.statusCode).toBe(401);
       expect(error.code).toBe('UNAUTHORIZED');
@@ -98,7 +118,7 @@ describe('BaseService', () => {
 
     it('should retry on failure and eventually succeed', async () => {
       let attempts = 0;
-      const result = await testService.withRetry(async () => {
+      const result = await testService.testWithRetry(async () => {
         attempts++;
         if (attempts < 3) {
           throw new Error('Temporary failure');
@@ -112,9 +132,9 @@ describe('BaseService', () => {
 
     it('should not retry validation errors', async () => {
       let attempts = 0;
-      
+
       try {
-        await testService.withRetry(async () => {
+        await testService.testWithRetry(async () => {
           attempts++;
           throw new ValidationError('Invalid input');
         });
@@ -126,9 +146,9 @@ describe('BaseService', () => {
 
     it('should not retry not found errors', async () => {
       let attempts = 0;
-      
+
       try {
-        await testService.withRetry(async () => {
+        await testService.testWithRetry(async () => {
           attempts++;
           throw new NotFoundError('Resource');
         });
@@ -140,9 +160,9 @@ describe('BaseService', () => {
 
     it('should not retry unauthorized errors', async () => {
       let attempts = 0;
-      
+
       try {
-        await testService.withRetry(async () => {
+        await testService.testWithRetry(async () => {
           attempts++;
           throw new UnauthorizedError();
         });
@@ -154,9 +174,9 @@ describe('BaseService', () => {
 
     it('should respect maxRetries configuration', async () => {
       let attempts = 0;
-      
+
       try {
-        await testService.withRetry(async () => {
+        await testService.testWithRetry(async () => {
           attempts++;
           throw new Error('Always fails');
         }, { maxRetries: 2 });
@@ -175,28 +195,28 @@ describe('BaseService', () => {
 
     it('should throw ValidationError when required field is missing', async () => {
       const data = { name: 'John' };
-      
+
       await expect(testService.testValidation(data, ['name', 'email']))
         .rejects.toThrow(ValidationError);
     });
 
     it('should throw ValidationError when required field is empty string', async () => {
       const data = { name: 'John', email: '' };
-      
+
       await expect(testService.testValidation(data, ['name', 'email']))
         .rejects.toThrow(ValidationError);
     });
 
     it('should throw ValidationError when required field is null', async () => {
       const data = { name: 'John', email: null };
-      
+
       await expect(testService.testValidation(data, ['name', 'email']))
         .rejects.toThrow(ValidationError);
     });
 
     it('should include missing fields in error message', async () => {
       const data = { name: 'John' };
-      
+
       try {
         await testService.testValidation(data, ['name', 'email', 'age']);
       } catch (error) {
@@ -217,7 +237,7 @@ describe('BaseService', () => {
       const graphqlError = {
         errors: [{ errorType: 'Unauthorized', message: 'Access denied' }]
       };
-      
+
       const result = await testService.testErrorTransformation(graphqlError);
       expect(result).toBeInstanceOf(UnauthorizedError);
       expect(result.message).toBe('Access denied');
@@ -227,14 +247,14 @@ describe('BaseService', () => {
       const graphqlError = {
         errors: [{ errorType: 'DynamoDB:ConditionalCheckFailedException' }]
       };
-      
+
       const result = await testService.testErrorTransformation(graphqlError);
       expect(result).toBeInstanceOf(NotFoundError);
     });
 
     it('should transform network error', async () => {
       const networkError = { name: 'NetworkError', message: 'Network failed' };
-      
+
       const result = await testService.testErrorTransformation(networkError);
       expect(result).toBeInstanceOf(APIError);
       expect(result.code).toBe('NETWORK_ERROR');
@@ -242,7 +262,7 @@ describe('BaseService', () => {
 
     it('should transform timeout error', async () => {
       const timeoutError = { name: 'TimeoutError', message: 'Request timed out' };
-      
+
       const result = await testService.testErrorTransformation(timeoutError);
       expect(result).toBeInstanceOf(APIError);
       expect(result.code).toBe('TIMEOUT');
@@ -250,7 +270,7 @@ describe('BaseService', () => {
 
     it('should transform unknown error', async () => {
       const unknownError = new Error('Unknown error');
-      
+
       const result = await testService.testErrorTransformation(unknownError);
       expect(result).toBeInstanceOf(APIError);
       expect(result.code).toBe('UNKNOWN_ERROR');
@@ -266,19 +286,34 @@ describe('BaseService', () => {
     });
 
     it('should throw APIError when response has errors', async () => {
-      const response = { 
-        errors: [{ message: 'GraphQL error', errorType: 'ValidationError' }] 
+      const response = {
+        errors: [{ message: 'GraphQL error', errorType: 'ValidationError' }]
       };
-      
+
       await expect(testService.testHandleResponse(response))
         .rejects.toThrow(APIError);
     });
 
     it('should throw APIError when response has no data', async () => {
       const response = {};
-      
+
       await expect(testService.testHandleResponse(response))
         .rejects.toThrow(APIError);
+    });
+  });
+
+  describe('getCurrentUserId', () => {
+    it('should return current user ID from auth', async () => {
+      const userId = await testService.testGetCurrentUserId();
+      expect(userId).toBe('test-user-123');
+    });
+
+    it('should throw UnauthorizedError when user is not authenticated', async () => {
+      const { getCurrentUserId } = require('../lib/auth-utils');
+      getCurrentUserId.mockRejectedValueOnce(new Error('User not authenticated'));
+
+      await expect(testService.testGetCurrentUserId())
+        .rejects.toThrow('User must be authenticated to perform this action');
     });
   });
 });

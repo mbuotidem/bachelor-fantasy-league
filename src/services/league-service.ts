@@ -29,12 +29,13 @@ export class LeagueService extends BaseService {
     this.validateRequired(input, ['name', 'season']);
 
     const leagueCode = this.generateLeagueCode();
+    const commissionerId = await this.getCurrentUserId();
     
     const createData: CreateLeagueData = {
       name: input.name,
       season: input.season,
       leagueCode,
-      commissionerId: 'current-user-id', // This would come from auth context in real implementation
+      commissionerId,
       status: 'created' as LeagueStatus,
       settings: JSON.stringify(input.settings || this.getDefaultLeagueSettings()),
     };
@@ -153,14 +154,30 @@ export class LeagueService extends BaseService {
       throw new ValidationError('League is not accepting new members');
     }
 
-    // Create the team (this will be handled by TeamService, but we'll simulate the response)
-    // In a real implementation, this would call TeamService.createTeam
-    const teamId = `team_${Date.now()}`; // Placeholder
-
-    return {
-      league,
-      teamId
+    // Create the team using the GraphQL client directly
+    const ownerId = await this.getCurrentUserId();
+    
+    const teamCreateData = {
+      leagueId: league.id,
+      ownerId,
+      name: input.teamName,
+      draftedContestants: [],
+      totalPoints: 0,
+      episodeScores: JSON.stringify([]),
     };
+
+    return this.withRetry(async () => {
+      const teamResponse = await this.client.models.Team.create(teamCreateData);
+      
+      if (!teamResponse.data) {
+        throw new Error('Failed to create team');
+      }
+
+      return {
+        league,
+        teamId: teamResponse.data.id
+      };
+    });
   }
 
   // Delete a league (commissioner only)

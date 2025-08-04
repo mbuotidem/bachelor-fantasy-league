@@ -24,9 +24,12 @@ export class TeamService extends BaseService {
   async createTeam(input: CreateTeamInput): Promise<Team> {
     this.validateRequired(input, ['leagueId', 'name']);
 
+    // Use provided ownerId or get current authenticated user
+    const ownerId = input.ownerId || await this.getCurrentUserId();
+
     const createData: CreateTeamData = {
       leagueId: input.leagueId,
-      ownerId: 'current-user-id', // This would come from auth context in real implementation
+      ownerId,
       name: input.name,
       draftedContestants: [],
       totalPoints: 0,
@@ -35,7 +38,7 @@ export class TeamService extends BaseService {
 
     return this.withRetry(async () => {
       const response = await this.client.models.Team.create(createData);
-      
+
       if (!response.data) {
         throw new Error('Failed to create team');
       }
@@ -52,7 +55,7 @@ export class TeamService extends BaseService {
 
     return this.withRetry(async () => {
       const response = await this.client.models.Team.get({ id: teamId });
-      
+
       if (!response.data) {
         throw new NotFoundError('Team', teamId);
       }
@@ -71,7 +74,7 @@ export class TeamService extends BaseService {
       const response = await this.client.models.Team.list({
         filter: { leagueId: { eq: leagueId } }
       });
-      
+
       if (!response.data) {
         return [];
       }
@@ -84,7 +87,7 @@ export class TeamService extends BaseService {
   async getUserTeams(): Promise<Team[]> {
     return this.withRetry(async () => {
       const response = await this.client.models.Team.list();
-      
+
       if (!response.data) {
         return [];
       }
@@ -105,7 +108,7 @@ export class TeamService extends BaseService {
 
     return this.withRetry(async () => {
       const response = await this.client.models.Team.update(updateData);
-      
+
       if (!response.data) {
         throw new NotFoundError('Team', input.teamId);
       }
@@ -120,7 +123,7 @@ export class TeamService extends BaseService {
 
     // First get the current team to update the drafted contestants
     const currentTeam = await this.getTeam(input.teamId);
-    
+
     // Check if contestant is already drafted
     if (currentTeam.draftedContestants.includes(input.contestantId)) {
       throw new ValidationError('Contestant is already drafted by this team');
@@ -144,7 +147,7 @@ export class TeamService extends BaseService {
     this.validateRequired({ teamId, contestantId }, ['teamId', 'contestantId']);
 
     const currentTeam = await this.getTeam(teamId);
-    
+
     const updatedContestants = currentTeam.draftedContestants.filter(
       id => id !== contestantId
     );
@@ -162,7 +165,7 @@ export class TeamService extends BaseService {
     }
 
     const currentTeam = await this.getTeam(teamId);
-    
+
     // Update episode scores
     const updatedEpisodeScores = [...currentTeam.episodeScores];
     const existingScoreIndex = updatedEpisodeScores.findIndex(
@@ -177,7 +180,7 @@ export class TeamService extends BaseService {
 
     // Calculate new total points
     const newTotalPoints = updatedEpisodeScores.reduce(
-      (total, score) => total + score.points, 
+      (total, score) => total + score.points,
       0
     );
 
@@ -189,7 +192,7 @@ export class TeamService extends BaseService {
 
     return this.withRetry(async () => {
       const response = await this.client.models.Team.update(updateData);
-      
+
       if (!response.data) {
         throw new NotFoundError('Team', teamId);
       }
@@ -206,7 +209,7 @@ export class TeamService extends BaseService {
 
     return this.withRetry(async () => {
       const response = await this.client.models.Team.delete({ id: teamId });
-      
+
       if (!response.data) {
         throw new NotFoundError('Team', teamId);
       }
@@ -216,7 +219,7 @@ export class TeamService extends BaseService {
   // Get team standings for a league
   async getTeamStandings(leagueId: string): Promise<Team[]> {
     const teams = await this.getTeamsByLeague(leagueId);
-    
+
     // Sort teams by total points (descending)
     return teams.sort((a, b) => b.totalPoints - a.totalPoints);
   }
@@ -225,7 +228,7 @@ export class TeamService extends BaseService {
   async canDraftContestant(teamId: string, contestantId: string): Promise<boolean> {
     try {
       const team = await this.getTeam(teamId);
-      
+
       // Check if team has space
       if (team.draftedContestants.length >= 5) {
         return false;
@@ -246,12 +249,12 @@ export class TeamService extends BaseService {
 
   private transformTeamModel(model: TeamModel): Team {
     let episodeScores: EpisodeScore[] = [];
-    
+
     try {
-      episodeScores = model.episodeScores ? 
+      episodeScores = model.episodeScores ?
         JSON.parse(model.episodeScores as string) : [];
-    } catch {
-      console.warn('Failed to parse episode scores');
+    } catch (error) {
+      console.warn('Failed to parse episode scores:', error);
       episodeScores = [];
     }
 

@@ -12,9 +12,27 @@ jest.mock('../lib/api-client', () => ({
         list: jest.fn(),
         update: jest.fn(),
         delete: jest.fn(),
+      },
+      Team: {
+        create: jest.fn(),
+        get: jest.fn(),
+        list: jest.fn(),
+        update: jest.fn(),
+        delete: jest.fn(),
       }
     }
   }
+}));
+
+// Mock auth utilities
+jest.mock('../lib/auth-utils', () => ({
+  getCurrentUserId: jest.fn().mockResolvedValue('test-user-123'),
+  getCurrentUserDetails: jest.fn().mockResolvedValue({
+    userId: 'test-user-123',
+    username: 'testuser',
+    signInDetails: { loginId: 'test@example.com' }
+  }),
+  isAuthenticated: jest.fn().mockResolvedValue(true)
 }));
 
 import { client } from '../lib/api-client';
@@ -24,6 +42,8 @@ const mockGet = client.models.League.get as jest.MockedFunction<typeof client.mo
 const mockList = client.models.League.list as jest.MockedFunction<typeof client.models.League.list>;
 const mockUpdate = client.models.League.update as jest.MockedFunction<typeof client.models.League.update>;
 const mockDelete = client.models.League.delete as jest.MockedFunction<typeof client.models.League.delete>;
+
+const mockTeamCreate = client.models.Team.create as jest.MockedFunction<typeof client.models.Team.create>;
 
 describe('LeagueService', () => {
   let leagueService: LeagueService;
@@ -73,6 +93,7 @@ describe('LeagueService', () => {
           season: input.season,
           status: 'created',
           leagueCode: expect.any(String),
+          commissionerId: 'test-user-123',
           settings: expect.any(String),
         })
       );
@@ -261,6 +282,20 @@ describe('LeagueService', () => {
   describe('joinLeague', () => {
     it('should join a league successfully', async () => {
       mockList.mockResolvedValue({ data: [mockLeagueData] });
+      
+      const mockTeamData = {
+        id: 'team-456',
+        leagueId: 'league-123',
+        ownerId: 'test-user-123',
+        name: 'My Team',
+        draftedContestants: [],
+        totalPoints: 0,
+        episodeScores: JSON.stringify([]),
+        createdAt: '2024-01-01T00:00:00Z',
+        updatedAt: '2024-01-01T00:00:00Z',
+      };
+      
+      mockTeamCreate.mockResolvedValue({ data: mockTeamData });
 
       const input = {
         leagueCode: 'ABC123',
@@ -270,7 +305,17 @@ describe('LeagueService', () => {
       const result = await leagueService.joinLeague(input);
 
       expect(result.league.leagueCode).toBe('ABC123');
-      expect(result.teamId).toBeDefined();
+      expect(result.teamId).toBe('team-456');
+      
+      // Verify team creation was called with correct data
+      expect(mockTeamCreate).toHaveBeenCalledWith({
+        leagueId: 'league-123',
+        ownerId: 'test-user-123',
+        name: 'My Team',
+        draftedContestants: [],
+        totalPoints: 0,
+        episodeScores: JSON.stringify([]),
+      });
     });
 
     it('should throw ValidationError when leagueCode is missing', async () => {

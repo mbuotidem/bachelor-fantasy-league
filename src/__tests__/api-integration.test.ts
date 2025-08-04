@@ -13,6 +13,17 @@ jest.mock('../lib/amplify', () => ({
   },
 }));
 
+// Mock auth utilities
+jest.mock('../lib/auth-utils', () => ({
+  getCurrentUserId: jest.fn().mockResolvedValue('test-user-123'),
+  getCurrentUserDetails: jest.fn().mockResolvedValue({
+    userId: 'test-user-123',
+    username: 'testuser',
+    signInDetails: { loginId: 'test@example.com' }
+  }),
+  isAuthenticated: jest.fn().mockResolvedValue(true)
+}));
+
 // Mock the actual GraphQL client calls
 jest.mock('../lib/api-client', () => ({
   client: {
@@ -101,7 +112,7 @@ describe('API Integration Tests', () => {
           name: 'Test League',
           season: 'Season 29',
           leagueCode: 'ABC123',
-          commissionerId: 'user-123',
+          commissionerId: 'test-user-123',
           status: 'created',
           settings: JSON.stringify({}),
           createdAt: '2024-01-01T00:00:00Z',
@@ -113,7 +124,7 @@ describe('API Integration Tests', () => {
         data: {
           id: 'team-123',
           leagueId: 'league-123',
-          ownerId: 'user-123',
+          ownerId: 'test-user-123',
           name: 'Test Team',
           draftedContestants: [],
           totalPoints: 0,

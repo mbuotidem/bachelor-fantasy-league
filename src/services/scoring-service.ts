@@ -130,13 +130,15 @@ export class ScoringService extends BaseService {
   async scoreAction(input: ScoreActionInput): Promise<ScoringEvent> {
     this.validateRequired(input, ['episodeId', 'contestantId', 'actionType', 'points']);
 
+    const scoredBy = await this.getCurrentUserId();
+
     const createData: CreateScoringEventData = {
       episodeId: input.episodeId,
       contestantId: input.contestantId,
       actionType: input.actionType,
       points: input.points,
       description: input.description,
-      scoredBy: 'current-user-id', // This would be set from the current user context
+      scoredBy,
     };
 
     return this.withRetry(async () => {

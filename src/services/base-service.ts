@@ -1,4 +1,5 @@
 import { client, type APIClient } from '../lib/api-client';
+import { getCurrentUserId } from '../lib/auth-utils';
 
 // Custom error types for better error handling
 export class APIError extends Error {
@@ -225,6 +226,15 @@ export abstract class BaseService {
         `Missing required fields: ${missingFields.join(', ')}`,
         missingFields[0]
       );
+    }
+  }
+
+  // Helper method to get current authenticated user ID
+  protected async getCurrentUserId(): Promise<string> {
+    try {
+      return await getCurrentUserId();
+    } catch (error) {
+      throw new UnauthorizedError('User must be authenticated to perform this action');
     }
   }
 }

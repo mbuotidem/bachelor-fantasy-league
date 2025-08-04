@@ -8,7 +8,8 @@ import {
   scoringService,
   APIError,
   ValidationError,
-  NotFoundError
+  NotFoundError,
+  UnauthorizedError
 } from '../services';
 import type { League, Team, Contestant, Episode } from '../types';
 
@@ -86,6 +87,8 @@ export default function DataModelDemo() {
       errorMessage = `Validation Error: ${error.message}`;
     } else if (error instanceof NotFoundError) {
       errorMessage = `Not Found: ${error.message}`;
+    } else if (error instanceof UnauthorizedError) {
+      errorMessage = `Authentication Error: ${error.message}`;
     } else if (error instanceof APIError) {
       errorMessage = `API Error: ${error.message}`;
     } else if (error && typeof error === 'object' && 'message' in error && typeof error.message === 'string') {
