@@ -42,9 +42,9 @@ describe('Authentication Integration', () => {
     
     // Check that the data model demo is rendered
     expect(screen.getByText('Data Models Demo')).toBeInTheDocument();
-    expect(screen.getByText('Create League')).toBeInTheDocument();
-    expect(screen.getByText('Create Team')).toBeInTheDocument();
-    expect(screen.getByText('Create Contestant')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Create League' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Create Team' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Create Contestant' })).toBeInTheDocument();
   });
 
   it('renders with proper styling and layout', () => {
