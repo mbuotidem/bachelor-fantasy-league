@@ -84,12 +84,7 @@ export class LeagueService extends BaseService {
       }
 
       const rawLeague = response.data[0];
-      console.log('getLeagueByCode - Raw league data:', { id: rawLeague.id, name: rawLeague.name, leagueCode: rawLeague.leagueCode });
-      
-      const transformedLeague = this.transformLeagueModel(rawLeague);
-      console.log('getLeagueByCode - Transformed league:', { id: transformedLeague.id, name: transformedLeague.name, code: transformedLeague.leagueCode });
-      
-      return transformedLeague;
+      return this.transformLeagueModel(rawLeague);
     });
   }
 
@@ -195,7 +190,6 @@ export class LeagueService extends BaseService {
 
     // First, get the league by code
     const league = await this.getLeagueByCode(input.leagueCode);
-    console.log('joinLeague - Found league:', { id: league.id, name: league.name, code: league.leagueCode });
 
     // Check if league is in a joinable state
     if (league.status !== 'created') {
@@ -213,8 +207,6 @@ export class LeagueService extends BaseService {
       totalPoints: 0,
       episodeScores: JSON.stringify([]),
     };
-    console.log('joinLeague - Creating team with data:', teamCreateData);
-
     return this.withRetry(async () => {
       const teamResponse = await this.client.models.Team.create(teamCreateData);
       
@@ -222,12 +214,7 @@ export class LeagueService extends BaseService {
         throw new Error('Failed to create team');
       }
 
-      console.log('joinLeague - Team created:', { 
-        teamId: teamResponse.data.id, 
-        teamName: teamResponse.data.name,
-        teamLeagueId: teamResponse.data.leagueId,
-        originalLeagueId: league.id
-      });
+
 
       return {
         league,

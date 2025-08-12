@@ -71,7 +71,6 @@ export default function LeagueCreator({ onLeagueCreated, onCancel }: LeagueCreat
       const league = await leagueService.createLeague(formData);
       onLeagueCreated?.(league);
     } catch (error) {
-      console.error('Failed to create league:', error);
       setSubmitError(error instanceof Error ? error.message : 'Failed to create league');
     } finally {
       setIsSubmitting(false);

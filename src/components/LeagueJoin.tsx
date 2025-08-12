@@ -41,7 +41,6 @@ export default function LeagueJoin({ initialLeagueCode = '', onJoinSuccess, onCa
       const foundLeague = await leagueService.getLeagueByCode(code);
       setLeague(foundLeague);
     } catch (error) {
-      console.error('Failed to load league:', error);
       setLeagueError(error instanceof Error ? error.message : 'League not found');
       setLeague(null);
     } finally {
@@ -93,7 +92,6 @@ export default function LeagueJoin({ initialLeagueCode = '', onJoinSuccess, onCa
       
       onJoinSuccess?.(result.league, result.teamId);
     } catch (error) {
-      console.error('Failed to join league:', error);
       setSubmitError(error instanceof Error ? error.message : 'Failed to join league');
     } finally {
       setIsJoining(false);
