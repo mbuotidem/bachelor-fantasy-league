@@ -6,6 +6,7 @@ import { TeamService } from '../services/team-service';
 import LeagueCreator from './LeagueCreator';
 import LeagueInvite from './LeagueInvite';
 import LeagueJoin from './LeagueJoin';
+import LeagueDetail from './LeagueDetail';
 import type { League, Team } from '../types';
 
 interface LeagueWithTeam extends League {
@@ -19,6 +20,7 @@ export default function LeagueDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [activeModal, setActiveModal] = useState<'create' | 'join' | 'invite' | null>(null);
   const [selectedLeague, setSelectedLeague] = useState<League | null>(null);
+  const [viewingLeague, setViewingLeague] = useState<LeagueWithTeam | null>(null);
 
   const leagueService = new LeagueService();
   const teamService = new TeamService();
@@ -88,6 +90,14 @@ export default function LeagueDashboard() {
     setActiveModal('invite');
   };
 
+  const handleViewLeague = (league: LeagueWithTeam) => {
+    setViewingLeague(league);
+  };
+
+  const handleBackToLeagues = () => {
+    setViewingLeague(null);
+  };
+
 
 
   const getStatusBadge = (status: League['status'], isCommissioner: boolean) => {
@@ -127,6 +137,17 @@ export default function LeagueDashboard() {
           </div>
         </div>
       </div>
+    );
+  }
+
+  // If viewing a specific league, show the detail view
+  if (viewingLeague) {
+    return (
+      <LeagueDetail
+        league={viewingLeague}
+        isCommissioner={viewingLeague.isCommissioner}
+        onBack={handleBackToLeagues}
+      />
     );
   }
 
@@ -274,14 +295,17 @@ export default function LeagueDashboard() {
 
                 <div className="flex flex-col space-y-2 ml-4">
                   <button
+                    onClick={() => handleViewLeague(league)}
+                    className="px-3 py-1 text-xs font-medium text-white bg-rose-600 border border-rose-600 rounded-md hover:bg-rose-700 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2"
+                  >
+                    View & Manage
+                  </button>
+                  <button
                     onClick={() => handleInviteLeague(league)}
                     className="px-3 py-1 text-xs font-medium text-rose-600 bg-rose-50 border border-rose-200 rounded-md hover:bg-rose-100 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2"
                   >
                     Invite
                   </button>
-                  <div className="text-xs text-gray-500">
-                    View & Manage coming in Task 13
-                  </div>
                 </div>
               </div>
             </div>

@@ -55,15 +55,15 @@ export default function Home() {
                     </div>
                     <div className="flex items-center space-x-2">
                       <span className="text-green-500">✅</span>
-                      <span>Data models implemented</span>
+                      <span>League creation & joining</span>
                     </div>
                     <div className="flex items-center space-x-2">
                       <span className="text-green-500">✅</span>
-                      <span>Validation working</span>
+                      <span>Contestant management with flip cards</span>
                     </div>
                     <div className="flex items-center space-x-2">
                       <span className="text-green-500">✅</span>
-                      <span>TypeScript interfaces active</span>
+                      <span>Photo upload & S3 storage</span>
                     </div>
                   </div>
                 </div>

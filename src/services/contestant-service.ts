@@ -1,4 +1,5 @@
 import { BaseService, ValidationError, NotFoundError } from './base-service';
+import { StorageService } from './storage-service';
 import type { Schema } from '../lib/api-client';
 import type { Contestant, CreateContestantInput, EpisodeScore } from '../types';
 
@@ -23,6 +24,7 @@ export interface EliminateContestantInput {
 }
 
 export class ContestantService extends BaseService {
+  private storageService = new StorageService();
 
   // Create a new contestant
   async createContestant(input: CreateContestantInput): Promise<Contestant> {

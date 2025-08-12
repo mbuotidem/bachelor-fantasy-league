@@ -42,9 +42,9 @@ describe('Authentication Integration', () => {
     expect(screen.getByText('🌹 Bachelor Fantasy League')).toBeInTheDocument();
     expect(screen.getByText('Welcome back, test@example.com!')).toBeInTheDocument();
     expect(screen.getByText('Authentication system working')).toBeInTheDocument();
-    expect(screen.getByText('Data models implemented')).toBeInTheDocument();
-    expect(screen.getByText('Validation working')).toBeInTheDocument();
-    expect(screen.getByText('TypeScript interfaces active')).toBeInTheDocument();
+    expect(screen.getByText('League creation & joining')).toBeInTheDocument();
+    expect(screen.getByText('Contestant management with flip cards')).toBeInTheDocument();
+    expect(screen.getByText('Photo upload & S3 storage')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Sign Out' })).toBeInTheDocument();
     
     // Check that the league dashboard is rendered
