@@ -83,20 +83,62 @@ export class LeagueService extends BaseService {
         throw new NotFoundError('League with code', leagueCode);
       }
 
-      return this.transformLeagueModel(response.data[0]);
+      const rawLeague = response.data[0];
+      console.log('getLeagueByCode - Raw league data:', { id: rawLeague.id, name: rawLeague.name, leagueCode: rawLeague.leagueCode });
+      
+      const transformedLeague = this.transformLeagueModel(rawLeague);
+      console.log('getLeagueByCode - Transformed league:', { id: transformedLeague.id, name: transformedLeague.name, code: transformedLeague.leagueCode });
+      
+      return transformedLeague;
     });
   }
 
   // List leagues for the current user
   async getUserLeagues(): Promise<League[]> {
     return this.withRetry(async () => {
-      const response = await this.client.models.League.list();
+      const currentUserId = await this.getCurrentUserId();
       
-      if (!response.data) {
-        return [];
-      }
+      // Get leagues where user is commissioner
+      const commissionerLeagues = await this.client.models.League.list({
+        filter: { commissionerId: { eq: currentUserId } }
+      });
+      // Get leagues where user has a team
+      const userTeams = await this.client.models.Team.list({
+        filter: { ownerId: { eq: currentUserId } }
+      });
 
-      return response.data.map(league => this.transformLeagueModel(league));
+      const teamLeagueIds = userTeams.data?.map(team => team.leagueId) || [];
+      
+      // Get leagues by team membership - try individual lookups instead of 'in' filter
+      const teamLeagues: League[] = [];
+      for (const leagueId of teamLeagueIds) {
+        try {
+          const leagueResponse = await this.client.models.League.get({ id: leagueId });
+          if (leagueResponse.data) {
+            teamLeagues.push(this.transformLeagueModel(leagueResponse.data));
+          }
+        } catch (error) {
+          // Silently handle errors (league might be deleted)
+        }
+      }
+      
+      // Transform commissioner leagues first
+      const transformedCommissionerLeagues = (commissionerLeagues.data || []).map(league => 
+        this.transformLeagueModel(league)
+      );
+
+      // Combine and deduplicate leagues (both are now transformed)
+      const allLeagues = [
+        ...transformedCommissionerLeagues,
+        ...teamLeagues
+      ];
+
+      // Remove duplicates by ID
+      const uniqueLeagues = allLeagues.filter((league, index, self) => 
+        index === self.findIndex(l => l.id === league.id)
+      );
+
+      return uniqueLeagues;
     });
   }
 
@@ -145,9 +187,15 @@ export class LeagueService extends BaseService {
   // Join a league with a team
   async joinLeague(input: JoinLeagueInput): Promise<{ league: League; teamId: string }> {
     this.validateRequired(input, ['leagueCode', 'teamName']);
+    
+    // Additional validation for team name
+    if (!input.teamName || input.teamName.trim().length === 0) {
+      throw new ValidationError('Team name is required');
+    }
 
     // First, get the league by code
     const league = await this.getLeagueByCode(input.leagueCode);
+    console.log('joinLeague - Found league:', { id: league.id, name: league.name, code: league.leagueCode });
 
     // Check if league is in a joinable state
     if (league.status !== 'created') {
@@ -165,6 +213,7 @@ export class LeagueService extends BaseService {
       totalPoints: 0,
       episodeScores: JSON.stringify([]),
     };
+    console.log('joinLeague - Creating team with data:', teamCreateData);
 
     return this.withRetry(async () => {
       const teamResponse = await this.client.models.Team.create(teamCreateData);
@@ -172,6 +221,13 @@ export class LeagueService extends BaseService {
       if (!teamResponse.data) {
         throw new Error('Failed to create team');
       }
+
+      console.log('joinLeague - Team created:', { 
+        teamId: teamResponse.data.id, 
+        teamName: teamResponse.data.name,
+        teamLeagueId: teamResponse.data.leagueId,
+        originalLeagueId: league.id
+      });
 
       return {
         league,
