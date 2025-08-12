@@ -2,10 +2,35 @@
 
 import { Authenticator, ThemeProvider } from '@aws-amplify/ui-react';
 import '@aws-amplify/ui-react/styles.css';
-import { authTheme } from '../lib/auth-theme';
-import LeagueDashboard from '../components/LeagueDashboard';
+import { authTheme } from '../../../lib/auth-theme';
+import LeagueJoin from '../../../components/LeagueJoin';
+import { useRouter } from 'next/navigation';
+import { use } from 'react';
 
-export default function Home() {
+interface JoinPageProps {
+  params: Promise<{
+    code: string;
+  }>;
+}
+
+export default function JoinPage({ params }: JoinPageProps) {
+  const router = useRouter();
+  const { code } = use(params);
+
+  const handleJoinSuccess = async () => {
+    
+    // Add a small delay to ensure database operations are committed
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // Redirect to dashboard after successful join
+    router.push('/');
+  };
+
+  const handleCancel = () => {
+    // Redirect to home page if user cancels
+    router.push('/');
+  };
+
   return (
     <ThemeProvider theme={authTheme}>
       <div className="min-h-screen bg-gradient-to-br from-pink-50 to-rose-100">
@@ -18,7 +43,7 @@ export default function Home() {
                     🌹 Bachelor Fantasy League
                   </h1>
                   <p className="text-gray-600">
-                    Fantasy league for The Bachelor/Bachelorette
+                    Join the league and start your fantasy journey!
                   </p>
                 </div>
               );
@@ -33,7 +58,7 @@ export default function Home() {
                   <div className="flex justify-between items-center">
                     <div>
                       <h1 className="text-2xl font-bold text-rose-600">🌹 Bachelor Fantasy League</h1>
-                      <p className="text-gray-600">Welcome back, {user?.signInDetails?.loginId}!</p>
+                      <p className="text-gray-600">Welcome, {user?.signInDetails?.loginId}!</p>
                     </div>
                     <button
                       onClick={signOut}
@@ -45,33 +70,15 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Status indicators */}
-              <div className="bg-green-50 border-b border-green-200">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-                  <div className="flex flex-wrap gap-4 text-sm">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-green-500">✅</span>
-                      <span>Authentication system working</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <span className="text-green-500">✅</span>
-                      <span>Data models implemented</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <span className="text-green-500">✅</span>
-                      <span>Validation working</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <span className="text-green-500">✅</span>
-                      <span>TypeScript interfaces active</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              {/* League Dashboard */}
+              {/* Join League Form */}
               <div className="py-8">
-                <LeagueDashboard />
+                <div className="max-w-md mx-auto">
+                  <LeagueJoin
+                    initialLeagueCode={code}
+                    onJoinSuccess={handleJoinSuccess}
+                    onCancel={handleCancel}
+                  />
+                </div>
               </div>
             </div>
           )}

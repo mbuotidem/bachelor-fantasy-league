@@ -86,7 +86,11 @@ export class TeamService extends BaseService {
   // Get teams owned by the current user
   async getUserTeams(): Promise<Team[]> {
     return this.withRetry(async () => {
-      const response = await this.client.models.Team.list();
+      const currentUserId = await this.getCurrentUserId();
+      
+      const response = await this.client.models.Team.list({
+        filter: { ownerId: { eq: currentUserId } }
+      });
 
       if (!response.data) {
         return [];
