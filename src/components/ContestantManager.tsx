@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react';
 import ContestantCard from './ContestantCard';
 import ContestantForm from './ContestantForm';
 import { ContestantService } from '../services/contestant-service';
+import { EpisodeService } from '../services/episode-service';
+import { DEFAULT_EPISODE_NUMBER } from '../lib/constants';
 import type { Contestant, CreateContestantInput } from '../types';
 
 interface ContestantManagerProps {
@@ -21,6 +23,7 @@ export default function ContestantManager({ leagueId, isCommissioner }: Contesta
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'eliminated'>('all');
 
   const contestantService = new ContestantService();
+  const episodeService = new EpisodeService();
 
   useEffect(() => {
     loadContestants();
@@ -70,14 +73,32 @@ export default function ContestantManager({ leagueId, isCommissioner }: Contesta
     }
   };
 
+  const handleFormSubmit = async (data: CreateContestantInput | Contestant) => {
+    if ('id' in data) {
+      // It's a Contestant (update)
+      await handleUpdateContestant(data);
+    } else {
+      // It's a CreateContestantInput (create)
+      await handleCreateContestant(data);
+    }
+  };
+
+  const getCurrentEpisodeNumber = async (): Promise<number> => {
+    try {
+      return await episodeService.getCurrentEpisodeNumber(leagueId);
+    } catch (error) {
+      console.warn('Failed to get current episode number, using default:', error);
+      return DEFAULT_EPISODE_NUMBER;
+    }
+  };
+
   const handleEliminate = async (contestant: Contestant) => {
     if (!window.confirm(`Are you sure you want to eliminate ${contestant.name}?`)) {
       return;
     }
 
     try {
-      // For now, we'll use a default episode number. In a real app, this would come from current episode
-      const episodeNumber = 1; // This should be dynamic based on current episode
+      const episodeNumber = await getCurrentEpisodeNumber();
       const updated = await contestantService.eliminateContestant({
         contestantId: contestant.id,
         episodeNumber,
@@ -263,7 +284,7 @@ export default function ContestantManager({ leagueId, isCommissioner }: Contesta
         <ContestantForm
           leagueId={leagueId}
           contestant={editingContestant}
-          onSubmit={editingContestant ? handleUpdateContestant : handleCreateContestant}
+          onSubmit={handleFormSubmit}
           onCancel={() => {
             setShowForm(false);
             setEditingContestant(null);

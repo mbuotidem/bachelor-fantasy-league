@@ -73,7 +73,8 @@ export default function ContestantForm({ leagueId, contestant, onSubmit, onCance
         } else {
           // For new contestants, try to upload but fall back to preview
           try {
-            const tempId = `temp-${Date.now()}`;
+            // Use crypto.randomUUID() for better ID generation to avoid collisions
+            const tempId = `temp-${crypto.randomUUID()}`;
             const uploadResult = await storageService.uploadContestantPhoto(file, tempId);
             setFormData(prev => ({
               ...prev,

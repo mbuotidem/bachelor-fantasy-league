@@ -1,4 +1,5 @@
 import { uploadData, getUrl, remove } from 'aws-amplify/storage';
+import { PHOTO_URL_EXPIRATION_SECONDS, DEFAULT_FILE_URL_EXPIRATION_SECONDS, MAX_FILE_SIZE_BYTES, SUPPORTED_IMAGE_TYPES } from '../lib/constants';
 
 export interface UploadResult {
   key: string;
@@ -12,10 +13,10 @@ export class StorageService {
    */
   async uploadContestantPhoto(file: File, contestantId: string): Promise<UploadResult> {
     try {
-      // Generate a unique filename
+      // Generate a unique filename using UUID to avoid collisions
       const fileExtension = file.name.split('.').pop() || 'jpg';
-      const timestamp = Date.now();
-      const key = `contestant-photos/${contestantId}-${timestamp}.${fileExtension}`;
+      const uniqueId = crypto.randomUUID();
+      const key = `contestant-photos/${contestantId}-${uniqueId}.${fileExtension}`;
 
       // Upload the file
       const result = await uploadData({
@@ -35,7 +36,7 @@ export class StorageService {
       const urlResult = await getUrl({
         key: result.key,
         options: {
-          expiresIn: 3600 * 24 * 365 // 1 year expiration for contestant photos
+          expiresIn: PHOTO_URL_EXPIRATION_SECONDS
         }
       });
 
@@ -52,7 +53,7 @@ export class StorageService {
   /**
    * Get a public URL for a stored file
    */
-  async getFileUrl(key: string, expiresIn: number = 3600): Promise<string> {
+  async getFileUrl(key: string, expiresIn: number = DEFAULT_FILE_URL_EXPIRATION_SECONDS): Promise<string> {
     try {
       const result = await getUrl({
         key,
@@ -83,8 +84,8 @@ export class StorageService {
   async uploadLeagueAsset(file: File, leagueId: string, assetType: string): Promise<UploadResult> {
     try {
       const fileExtension = file.name.split('.').pop() || 'jpg';
-      const timestamp = Date.now();
-      const key = `league-assets/${leagueId}/${assetType}-${timestamp}.${fileExtension}`;
+      const uniqueId = crypto.randomUUID();
+      const key = `league-assets/${leagueId}/${assetType}-${uniqueId}.${fileExtension}`;
 
       const result = await uploadData({
         key,
@@ -103,7 +104,7 @@ export class StorageService {
       const urlResult = await getUrl({
         key: result.key,
         options: {
-          expiresIn: 3600 * 24 * 365 // 1 year expiration
+          expiresIn: PHOTO_URL_EXPIRATION_SECONDS
         }
       });
 
@@ -126,15 +127,13 @@ export class StorageService {
       return { isValid: false, error: 'Please select an image file' };
     }
 
-    // Check file size (max 5MB)
-    const maxSize = 5 * 1024 * 1024; // 5MB
-    if (file.size > maxSize) {
+    // Check file size
+    if (file.size > MAX_FILE_SIZE_BYTES) {
       return { isValid: false, error: 'Image must be less than 5MB' };
     }
 
     // Check supported formats
-    const supportedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-    if (!supportedTypes.includes(file.type)) {
+    if (!SUPPORTED_IMAGE_TYPES.includes(file.type)) {
       return { isValid: false, error: 'Supported formats: JPEG, PNG, WebP' };
     }
 
