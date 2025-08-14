@@ -23,7 +23,6 @@ export default function DraftTimer({
   // Only reset timer when the turn actually changes (not on page refresh)
   useEffect(() => {
     if (isActive && currentTurnId && currentTurnId !== lastTurnId) {
-      console.log('Turn changed, resetting timer:', { from: lastTurnId, to: currentTurnId });
       setTimeRemaining(timeLimit);
       setLastTurnId(currentTurnId);
     }

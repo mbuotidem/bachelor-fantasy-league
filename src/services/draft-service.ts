@@ -111,6 +111,25 @@ export class DraftService extends BaseService {
     });
   }
 
+  // List all drafts for a league (for debugging/admin purposes)
+  async listDraftsByLeague(leagueId: string): Promise<Draft[]> {
+    if (!leagueId) {
+      throw new ValidationError('League ID is required');
+    }
+
+    return this.withRetry(async () => {
+      const response = await this.client.models.Draft.list({
+        filter: { leagueId: { eq: leagueId } }
+      });
+
+      if (!response.data) {
+        return [];
+      }
+
+      return response.data.map(draft => this.transformDraftModel(draft));
+    });
+  }
+
   // Start the draft
   async startDraft(draftId: string): Promise<Draft> {
     if (!draftId) {
@@ -313,7 +332,7 @@ export class DraftService extends BaseService {
     const draftedContestantIds = draft.picks.map(pick => pick.contestantId);
 
     // Return only available contestants
-    return allContestants.filter(contestant => 
+    return allContestants.filter(contestant =>
       !draftedContestantIds.includes(contestant.id)
     );
   }
@@ -363,8 +382,8 @@ export class DraftService extends BaseService {
     }
 
     try {
-      settings = model.settings ? 
-        { ...settings, ...JSON.parse(model.settings as string) } : 
+      settings = model.settings ?
+        { ...settings, ...JSON.parse(model.settings as string) } :
         settings;
     } catch (error) {
       console.warn('Failed to parse draft settings:', error);
@@ -394,14 +413,14 @@ export class DraftService extends BaseService {
 
   private async validateContestantAvailable(contestantId: string, draft: Draft): Promise<void> {
     const draftedContestantIds = draft.picks.map(pick => pick.contestantId);
-    
+
     if (draftedContestantIds.includes(contestantId)) {
       throw new ValidationError('Contestant has already been drafted');
     }
 
     // Check if contestant exists and is in the same league
     const contestantResponse = await this.client.models.Contestant.get({ id: contestantId });
-    
+
     if (!contestantResponse.data) {
       throw new NotFoundError('Contestant', contestantId);
     }
@@ -413,7 +432,7 @@ export class DraftService extends BaseService {
 
   private async validateTeamDraftLimit(teamId: string, draft: Draft): Promise<void> {
     const teamPicks = this.getTeamPicks(draft, teamId);
-    
+
     if (teamPicks.length >= 5) {
       throw new ValidationError('Team has already drafted the maximum number of contestants (5)');
     }
@@ -422,7 +441,7 @@ export class DraftService extends BaseService {
   private async updateTeamDraftedContestants(teamId: string, contestantId: string): Promise<void> {
     // Get current team
     const teamResponse = await this.client.models.Team.get({ id: teamId });
-    
+
     if (!teamResponse.data) {
       throw new NotFoundError('Team', teamId);
     }

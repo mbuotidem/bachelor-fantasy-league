@@ -104,9 +104,7 @@ export default function DraftBoard({ leagueId, currentUserId, isCommissioner = f
       setError(null);
 
       // Load draft
-      console.log('Loading draft for league:', leagueId);
       const draftData = await draftService.getDraftByLeague(leagueId);
-      console.log('Loaded draft data:', draftData);
       setDraft(draftData);
 
       // Load contestants
@@ -118,7 +116,6 @@ export default function DraftBoard({ leagueId, currentUserId, isCommissioner = f
       setTeams(teamsData);
 
     } catch (err) {
-      console.error('Error loading draft data:', err);
       setError(err instanceof Error ? err.message : 'Failed to load draft data');
     } finally {
       setLoading(false);
@@ -155,7 +152,6 @@ export default function DraftBoard({ leagueId, currentUserId, isCommissioner = f
       const updatedDraft = await draftService.startDraft(draft.id);
       setDraft(updatedDraft);
     } catch (err) {
-      console.error('Error starting draft:', err);
       setError(err instanceof Error ? err.message : 'Failed to start draft');
     }
   };
@@ -188,7 +184,6 @@ export default function DraftBoard({ leagueId, currentUserId, isCommissioner = f
       alert('Draft has been restarted! You can now start it again with the new team setup.');
       
     } catch (err) {
-      console.error('Error restarting draft:', err);
       setError(err instanceof Error ? err.message : 'Failed to restart draft');
     } finally {
       setLoading(false);
@@ -196,21 +191,15 @@ export default function DraftBoard({ leagueId, currentUserId, isCommissioner = f
   };
 
   const handleContestantSelect = async (contestant: Contestant) => {
-    console.log('Contestant clicked:', contestant.name);
-    
     if (!draft) {
-      console.log('No draft found');
       alert('No draft found. Please refresh the page.');
       return;
     }
 
     if (!canMakePick()) {
-      console.log('Cannot make pick - not user turn or draft not active');
       alert('It\'s not your turn to pick or the draft is not active.');
       return;
     }
-
-    console.log('Showing confirmation dialog...');
     
     // Show confirmation dialog
     const confirmed = window.confirm(
@@ -219,11 +208,8 @@ export default function DraftBoard({ leagueId, currentUserId, isCommissioner = f
     );
     
     if (!confirmed) {
-      console.log('User cancelled pick');
       return;
     }
-
-    console.log('User confirmed pick, proceeding...');
 
     try {
       setMakingPick(true);
@@ -231,25 +217,14 @@ export default function DraftBoard({ leagueId, currentUserId, isCommissioner = f
 
       const currentTeam = getCurrentUserTeam();
       if (!currentTeam) {
-        console.error('No current user team found');
         throw new Error('Could not find your team. Please refresh the page.');
       }
-
-      console.log('Making pick:', {
-        draftId: draft.id,
-        teamId: currentTeam.id,
-        contestantId: contestant.id,
-        contestantName: contestant.name,
-        fullDraft: draft
-      });
 
       const updatedDraft = await draftService.makePick({
         draftId: draft.id,
         teamId: currentTeam.id,
         contestantId: contestant.id,
       });
-
-      console.log('Pick successful, updated draft:', updatedDraft);
 
       setDraft(updatedDraft);
 
@@ -266,7 +241,6 @@ export default function DraftBoard({ leagueId, currentUserId, isCommissioner = f
       }
 
     } catch (err) {
-      console.error('Error making pick:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to make pick';
       setError(errorMessage);
       alert(`❌ Failed to draft ${contestant.name}: ${errorMessage}`);
@@ -416,7 +390,6 @@ export default function DraftBoard({ leagueId, currentUserId, isCommissioner = f
               currentTurnId={draftService.getCurrentTeamId(draft) || undefined}
               onTimeExpired={() => {
                 // TODO: Implement auto-pick or skip logic
-                console.log('Time expired for pick');
               }}
             />
           )}
@@ -502,8 +475,8 @@ export default function DraftBoard({ leagueId, currentUserId, isCommissioner = f
         )}
       </div>
 
-      {/* Debug Information */}
-      {draft.status === 'in_progress' && (
+      {/* Debug Information - Development Only */}
+      {process.env.NODE_ENV === 'development' && draft.status === 'in_progress' && (
         <div className="bg-yellow-50 border-2 border-yellow-300 rounded-lg p-4 mb-4">
           <h4 className="font-semibold text-yellow-800 mb-2">🔍 Draft Debug Info</h4>
           <div className="text-sm text-yellow-700 space-y-2">
@@ -621,45 +594,45 @@ export default function DraftBoard({ leagueId, currentUserId, isCommissioner = f
           </button>
         </div>
         
-        {/* Debug Tools */}
-        <div className="mb-4 p-4 bg-yellow-100 border border-yellow-300 rounded">
-          <h4 className="font-bold text-yellow-800 mb-2">🔧 Debug Tools</h4>
-          <div className="flex space-x-2">
-            <button
-              onClick={loadDraftData}
-              className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
-            >
-              Refresh Draft Data
-            </button>
-            <button
-              onClick={async () => {
-                try {
-                  const response = await draftService['client'].models.Draft.list({
-                    filter: { leagueId: { eq: leagueId } }
-                  });
-                  console.log('All drafts for this league:', response.data);
-                  alert(`Found ${response.data?.length || 0} drafts. Check console for details.`);
-                } catch (err) {
-                  console.error('Error listing drafts:', err);
-                }
-              }}
-              className="px-3 py-1 bg-purple-600 text-white rounded hover:bg-purple-700 text-sm"
-            >
-              List All Drafts
-            </button>
-            {contestants.length > 0 && (
+        {/* Debug Tools - Development Only */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className="mb-4 p-4 bg-yellow-100 border border-yellow-300 rounded">
+            <h4 className="font-bold text-yellow-800 mb-2">🔧 Debug Tools</h4>
+            <div className="flex space-x-2">
               <button
-                onClick={() => handleContestantSelect(contestants[0])}
-                className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-sm"
+                onClick={loadDraftData}
+                className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
               >
-                Test Draft {contestants[0]?.name}
+                Refresh Draft Data
               </button>
-            )}
+              <button
+                onClick={async () => {
+                  try {
+                    const drafts = await draftService.listDraftsByLeague(leagueId);
+                    console.log('All drafts for this league:', drafts);
+                    alert(`Found ${drafts.length} drafts. Check console for details.`);
+                  } catch (err) {
+                    console.error('Error listing drafts:', err);
+                  }
+                }}
+                className="px-3 py-1 bg-purple-600 text-white rounded hover:bg-purple-700 text-sm"
+              >
+                List All Drafts
+              </button>
+              {contestants.length > 0 && (
+                <button
+                  onClick={() => handleContestantSelect(contestants[0])}
+                  className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-sm"
+                >
+                  Test Draft {contestants[0]?.name}
+                </button>
+              )}
+            </div>
+            <p className="text-xs text-yellow-700 mt-1">
+              Current Draft ID: <code className="bg-yellow-200 px-1 rounded">{draft?.id}</code>
+            </p>
           </div>
-          <p className="text-xs text-yellow-700 mt-1">
-            Current Draft ID: <code className="bg-yellow-200 px-1 rounded">{draft?.id}</code>
-          </p>
-        </div>
+        )}
 
         {contestants.length === 0 ? (
           <div className="text-center py-12">
