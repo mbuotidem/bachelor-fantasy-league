@@ -152,31 +152,33 @@ export default function LeagueDashboard() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">My Leagues</h1>
-          <p className="text-gray-600">Manage your Bachelor Fantasy Leagues</p>
+    <div className="px-4 sm:px-6 max-w-4xl mx-auto">
+      {/* Header - Mobile First */}
+      <div className="mb-6">
+        <div className="text-center sm:text-left mb-4">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">My Leagues</h1>
+          <p className="text-sm sm:text-base text-gray-600">Manage your Bachelor Fantasy Leagues</p>
         </div>
-        <div className="flex space-x-3">
+        
+        {/* Mobile-first button layout */}
+        <div className="flex flex-col sm:flex-row gap-3 sm:justify-end">
           <button
             onClick={loadUserLeagues}
-            className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+            className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
           >
-            Refresh
+            🔄 Refresh
           </button>
           <button
             onClick={() => setActiveModal('join')}
-            className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rose-500"
+            className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rose-500"
           >
-            Join League
+            🔗 Join League
           </button>
           <button
             onClick={() => setActiveModal('create')}
-            className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-rose-600 hover:bg-rose-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rose-500"
+            className="w-full sm:w-auto px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-rose-600 hover:bg-rose-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rose-500"
           >
-            Create League
+            ➕ Create League
           </button>
         </div>
       </div>
@@ -208,77 +210,87 @@ export default function LeagueDashboard() {
         </div>
       )}
 
-      {/* Empty State */}
+      {/* Empty State - Mobile Optimized */}
       {!error && leagues.length === 0 && (
-        <div className="text-center py-12">
-          <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-          </svg>
-          <h3 className="mt-2 text-sm font-medium text-gray-900">No leagues yet</h3>
-          <p className="mt-1 text-sm text-gray-500">Get started by creating a new league or joining an existing one.</p>
-          <div className="mt-6 flex justify-center space-x-3">
+        <div className="text-center py-8 sm:py-12 px-4">
+          <div className="text-6xl mb-4">🏆</div>
+          <h3 className="text-lg sm:text-xl font-medium text-gray-900 mb-2">No leagues yet</h3>
+          <p className="text-sm sm:text-base text-gray-500 mb-6">Get started by creating a new league or joining an existing one.</p>
+          <div className="flex flex-col sm:flex-row gap-3 sm:justify-center max-w-sm mx-auto">
             <button
               onClick={() => setActiveModal('create')}
-              className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-rose-600 hover:bg-rose-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rose-500"
+              className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-3 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-rose-600 hover:bg-rose-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rose-500"
             >
-              <svg className="-ml-1 mr-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-              </svg>
-              Create League
+              ➕ Create League
             </button>
             <button
               onClick={() => setActiveModal('join')}
-              className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rose-500"
+              className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-3 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rose-500"
             >
-              <svg className="-ml-1 mr-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-              </svg>
-              Join League
+              🔗 Join League
             </button>
           </div>
         </div>
       )}
 
-      {/* Leagues List */}
+      {/* Leagues List - Mobile Optimized */}
       {leagues.length > 0 && (
         <div className="space-y-4">
           {leagues.map((league) => (
-            <div key={league.id} className="bg-white rounded-lg shadow border border-gray-200 p-6">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center space-x-3 mb-2">
-                    <h3 className="text-lg font-medium text-gray-900">{league.name}</h3>
-                    {getStatusBadge(league.status, league.isCommissioner)}
-                    {league.isCommissioner && (
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                        Commissioner
-                      </span>
-                    )}
+            <div key={league.id} className="bg-white rounded-lg shadow border border-gray-200 p-4 sm:p-6">
+              <div className="space-y-4">
+                {/* Header Section */}
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between space-y-3 sm:space-y-0">
+                  <div className="flex-1">
+                    <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 mb-2">
+                      <h3 className="text-lg font-medium text-gray-900">{league.name}</h3>
+                      <div className="flex flex-wrap gap-2">
+                        {getStatusBadge(league.status, league.isCommissioner)}
+                        {league.isCommissioner && (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                            Commissioner
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <p className="text-sm text-gray-600 mb-3">{league.season}</p>
+                    
+                    {/* League Info - Mobile Stacked */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs sm:text-sm text-gray-500">
+                      <div className="flex items-center">
+                        <span className="mr-1">👥</span>
+                        Max {league.settings.maxTeams} teams
+                      </div>
+                      <div className="flex items-center">
+                        <span className="mr-1">🎯</span>
+                        {league.settings.draftFormat} draft
+                      </div>
+                      <div className="flex items-center font-mono">
+                        <span className="mr-1">#</span>
+                        {league.leagueCode}
+                      </div>
+                    </div>
                   </div>
-                  <p className="text-sm text-gray-600 mb-3">{league.season}</p>
                   
-                  <div className="flex items-center space-x-6 text-sm text-gray-500">
-                    <div className="flex items-center">
-                      <svg className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                      </svg>
-                      Max {league.settings.maxTeams} teams
-                    </div>
-                    <div className="flex items-center">
-                      <svg className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                      </svg>
-                      {league.settings.draftFormat} draft
-                    </div>
-                    <div className="flex items-center font-mono">
-                      <svg className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
-                      </svg>
-                      {league.leagueCode}
-                    </div>
+                  {/* Action Buttons - Mobile Stacked */}
+                  <div className="flex flex-col sm:flex-col space-y-2 sm:ml-4 min-w-0 sm:min-w-[120px]">
+                    <button
+                      onClick={() => handleViewLeague(league)}
+                      className="w-full px-3 py-2 text-xs font-medium text-white bg-rose-600 border border-rose-600 rounded-md hover:bg-rose-700 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2"
+                    >
+                      📱 View & Manage
+                    </button>
+                    <button
+                      onClick={() => handleInviteLeague(league)}
+                      className="w-full px-3 py-2 text-xs font-medium text-rose-600 bg-rose-50 border border-rose-200 rounded-md hover:bg-rose-100 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2"
+                    >
+                      🔗 Invite
+                    </button>
                   </div>
+                </div>
 
-                  {league.userTeam && (
+                {/* User Team Info */}
+                {league.userTeam && (
                     <div className="mt-3 p-3 bg-gray-50 rounded-md">
                       <div className="flex items-center justify-between">
                         <div>
@@ -305,40 +317,24 @@ export default function LeagueDashboard() {
                     </div>
                   )}
 
-                  {league.status === 'created' && (
-                    <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-md">
-                      <div className="flex items-center">
-                        <svg className="w-4 h-4 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                        </svg>
-                        <p className="text-sm font-medium text-blue-800">
-                          {league.isCommissioner ? 'Ready to create draft' : 'Waiting for draft'}
-                        </p>
-                      </div>
-                      <p className="text-xs text-blue-700 mt-1">
-                        {league.isCommissioner 
-                          ? 'Go to league management to set up the draft'
-                          : 'The commissioner will start the draft soon'
-                        }
+                {league.status === 'created' && (
+                  <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                    <div className="flex items-center">
+                      <svg className="w-4 h-4 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                      </svg>
+                      <p className="text-sm font-medium text-blue-800">
+                        {league.isCommissioner ? 'Ready to create draft' : 'Waiting for draft'}
                       </p>
                     </div>
-                  )}
-                </div>
-
-                <div className="flex flex-col space-y-2 ml-4">
-                  <button
-                    onClick={() => handleViewLeague(league)}
-                    className="px-3 py-1 text-xs font-medium text-white bg-rose-600 border border-rose-600 rounded-md hover:bg-rose-700 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2"
-                  >
-                    View & Manage
-                  </button>
-                  <button
-                    onClick={() => handleInviteLeague(league)}
-                    className="px-3 py-1 text-xs font-medium text-rose-600 bg-rose-50 border border-rose-200 rounded-md hover:bg-rose-100 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2"
-                  >
-                    Invite
-                  </button>
-                </div>
+                    <p className="text-xs text-blue-700 mt-1">
+                      {league.isCommissioner 
+                        ? 'Go to league management to set up the draft'
+                        : 'The commissioner will start the draft soon'
+                      }
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           ))}
