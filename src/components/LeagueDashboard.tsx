@@ -291,6 +291,38 @@ export default function LeagueDashboard() {
                       </div>
                     </div>
                   )}
+
+                  {/* Draft Status Indicator */}
+                  {league.status === 'draft_in_progress' && (
+                    <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                      <div className="flex items-center">
+                        <svg className="w-4 h-4 text-yellow-600 mr-2 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                        <p className="text-sm font-medium text-yellow-800">Draft is live!</p>
+                      </div>
+                      <p className="text-xs text-yellow-700 mt-1">Click &quot;View &amp; Manage&quot; to join the draft</p>
+                    </div>
+                  )}
+
+                  {league.status === 'created' && (
+                    <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                      <div className="flex items-center">
+                        <svg className="w-4 h-4 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                        </svg>
+                        <p className="text-sm font-medium text-blue-800">
+                          {league.isCommissioner ? 'Ready to create draft' : 'Waiting for draft'}
+                        </p>
+                      </div>
+                      <p className="text-xs text-blue-700 mt-1">
+                        {league.isCommissioner 
+                          ? 'Go to league management to set up the draft'
+                          : 'The commissioner will start the draft soon'
+                        }
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex flex-col space-y-2 ml-4">

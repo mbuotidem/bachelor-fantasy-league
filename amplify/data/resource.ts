@@ -57,7 +57,7 @@ const schema = a.schema({
     })
     .authorization((allow) => [
       allow.owner().to(['create', 'read', 'update', 'delete']),
-      allow.authenticated().to(['read'])
+      allow.authenticated().to(['read', 'delete'])
     ]),
 
   // Contestant model
@@ -98,8 +98,7 @@ const schema = a.schema({
       league: a.belongsTo('League', 'leagueId'),
     })
     .authorization((allow) => [
-      allow.authenticated().to(['read']),
-      allow.owner().to(['create', 'update', 'delete'])
+      allow.authenticated().to(['read', 'create', 'update', 'delete'])
     ]),
 
   // Episode model

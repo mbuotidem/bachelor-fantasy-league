@@ -48,7 +48,7 @@ export default function Home() {
               {/* Status indicators */}
               <div className="bg-green-50 border-b border-green-200">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-                  <div className="flex flex-wrap gap-4 text-sm">
+                  <div className="flex flex-wrap gap-4 text-sm items-center">
                     <div className="flex items-center space-x-2">
                       <span className="text-green-500">✅</span>
                       <span>Authentication system working</span>
@@ -64,6 +64,13 @@ export default function Home() {
                     <div className="flex items-center space-x-2">
                       <span className="text-green-500">✅</span>
                       <span>Photo upload & S3 storage</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-green-500">✅</span>
+                      <span>Interactive draft system</span>
+                    </div>
+                    <div className="ml-auto">
+          
                     </div>
                   </div>
                 </div>

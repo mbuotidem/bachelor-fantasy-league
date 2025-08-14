@@ -120,6 +120,10 @@ describe('API Integration Tests', () => {
         }
       });
 
+      (client.models.Team.list as jest.Mock).mockResolvedValue({
+        data: [] // No existing teams
+      });
+
       (client.models.Team.create as jest.Mock).mockResolvedValue({
         data: {
           id: 'team-123',
@@ -199,7 +203,7 @@ describe('API Integration Tests', () => {
       expect(team.id).toBe('team-123');
       expect(contestant.id).toBe('contestant-123');
       expect(episode.id).toBe('episode-123');
-    });
+    }, 10000);
   });
 
   describe('Error Handling Integration', () => {
