@@ -1,10 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { getUrl } from 'aws-amplify/storage';
 import { draftService, contestantService } from '../services';
 import type { Draft, Contestant, Team, DraftPick } from '../types';
-import ContestantCard from './ContestantCard';
 
 interface TeamRosterProps {
   team: Team;
@@ -124,11 +123,7 @@ export default function TeamRoster({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadRosterData();
-  }, [team, draft]);
-
-  const loadRosterData = async () => {
+  const loadRosterData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -217,7 +212,11 @@ export default function TeamRoster({
     } finally {
       setLoading(false);
     }
-  };
+  }, [team, draft]);
+
+  useEffect(() => {
+    loadRosterData();
+  }, [loadRosterData]);
 
   const getPickOrderText = (pick: DraftPick): string => {
     if (!draft) return '';

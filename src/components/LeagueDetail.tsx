@@ -196,7 +196,7 @@ export default function LeagueDetail({ league, isCommissioner, onBack }: LeagueD
                 </svg>
               </div>
               <div>
-                <h3 className="text-xl font-bold">🎯 It's Your Turn to Pick!</h3>
+                <h3 className="text-xl font-bold">🎯 It&apos;s Your Turn to Pick!</h3>
                 <p className="text-green-100">Go to the Draft tab to make your selection</p>
               </div>
             </div>

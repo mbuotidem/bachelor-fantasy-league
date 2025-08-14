@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { draftService, teamService } from '../services';
 import type { Draft, Contestant, Team } from '../types';
 import ContestantCard from './ContestantCard';
@@ -98,29 +98,7 @@ export default function DraftBoard({ leagueId, currentUserId, isCommissioner = f
   const [error, setError] = useState<string | null>(null);
   const [makingPick, setMakingPick] = useState(false);
 
-  // Load draft data
-  useEffect(() => {
-    loadDraftData();
-  }, [leagueId]);
-
-  // Set up real-time updates (simplified for now)
-  useEffect(() => {
-    if (!draft) return;
-
-    // Poll for updates every 30 seconds during active draft (much less aggressive)
-    if (draft.status === 'in_progress') {
-      const interval = setInterval(() => {
-        // Only poll if the page is visible
-        if (!document.hidden) {
-          loadDraftData();
-        }
-      }, 30000);
-
-      return () => clearInterval(interval);
-    }
-  }, [draft?.status]);
-
-  const loadDraftData = async () => {
+  const loadDraftData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -145,7 +123,29 @@ export default function DraftBoard({ leagueId, currentUserId, isCommissioner = f
     } finally {
       setLoading(false);
     }
-  };
+  }, [leagueId]);
+
+  // Load draft data
+  useEffect(() => {
+    loadDraftData();
+  }, [loadDraftData]);
+
+  // Set up real-time updates (simplified for now)
+  useEffect(() => {
+    if (!draft) return;
+
+    // Poll for updates every 30 seconds during active draft (much less aggressive)
+    if (draft.status === 'in_progress') {
+      const interval = setInterval(() => {
+        // Only poll if the page is visible
+        if (!document.hidden) {
+          loadDraftData();
+        }
+      }, 30000);
+
+      return () => clearInterval(interval);
+    }
+  }, [draft, loadDraftData]);
 
   const handleStartDraft = async () => {
     if (!draft) return;

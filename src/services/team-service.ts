@@ -222,7 +222,6 @@ export class TeamService extends BaseService {
     console.log(`Attempting to delete team with ID: ${teamId}`);
 
     // First check if the team exists
-    let teamExists = true;
     try {
       const team = await this.getTeam(teamId);
       console.log(`Team found:`, team);

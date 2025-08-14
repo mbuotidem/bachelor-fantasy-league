@@ -57,7 +57,7 @@ export default function TeamManager({ leagueId, isCommissioner }: TeamManagerPro
     }
 
     const teamsToDelete: Team[] = [];
-    ownersWithMultipleTeams.forEach(([ownerId, ownerTeams]) => {
+    ownersWithMultipleTeams.forEach(([, ownerTeams]) => {
       // Keep the first team, delete the rest
       teamsToDelete.push(...ownerTeams.slice(1));
     });
