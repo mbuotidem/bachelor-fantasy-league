@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { getUrl } from 'aws-amplify/storage';
 import type { Contestant } from '../types';
 
 interface ContestantCardProps {
@@ -23,6 +24,41 @@ export default function ContestantCard({
   showActions = true,
 }: ContestantCardProps) {
   const [isFlipped, setIsFlipped] = useState(false);
+  const [imageError, setImageError] = useState(false);
+  const [refreshedUrl, setRefreshedUrl] = useState<string | null>(null);
+
+  // Function to refresh expired URLs
+  const refreshImageUrl = async (originalUrl: string) => {
+    try {
+      // Extract S3 key from the URL if it's a full URL
+      let s3Key = originalUrl;
+      if (originalUrl.startsWith('http')) {
+        const urlObj = new URL(originalUrl);
+        s3Key = urlObj.pathname.substring(1); // Remove leading slash
+        s3Key = decodeURIComponent(s3Key);
+      }
+
+      // Generate a fresh URL
+      const result = await getUrl({
+        path: s3Key,
+        options: {
+          expiresIn: 3600 // 1 hour
+        }
+      });
+      
+      setRefreshedUrl(result.url.toString());
+      setImageError(false);
+    } catch (error) {
+      console.error('Failed to refresh image URL:', error);
+      setImageError(true);
+    }
+  };
+
+  // Reset states when contestant changes
+  useEffect(() => {
+    setImageError(false);
+    setRefreshedUrl(null);
+  }, [contestant.profileImageUrl]);
 
   const handleCardClick = () => {
     setIsFlipped(!isFlipped);
@@ -48,11 +84,19 @@ export default function ContestantCard({
           }`}>
             {/* Profile Image */}
             <div className="relative h-48 bg-gradient-to-br from-rose-100 to-pink-100">
-              {contestant.profileImageUrl ? (
+              {contestant.profileImageUrl && !imageError ? (
                 <img
-                  src={contestant.profileImageUrl}
+                  src={refreshedUrl || contestant.profileImageUrl}
                   alt={contestant.name}
                   className="w-full h-full object-cover"
+                  onError={() => {
+                    if (!refreshedUrl && contestant.profileImageUrl) {
+                      // Try to refresh the URL once
+                      refreshImageUrl(contestant.profileImageUrl);
+                    } else {
+                      setImageError(true);
+                    }
+                  }}
                 />
               ) : (
                 <div className="flex items-center justify-center h-full">

@@ -162,6 +162,7 @@ export interface CreateContestantInput {
   hometown?: string
   occupation?: string
   bio?: string
+  profileImageUrl?: string
 }
 
 export interface ScoreActionInput {

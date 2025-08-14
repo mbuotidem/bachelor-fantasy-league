@@ -16,11 +16,11 @@ export class StorageService {
       // Generate a unique filename using UUID to avoid collisions
       const fileExtension = file.name.split('.').pop() || 'jpg';
       const uniqueId = crypto.randomUUID();
-      const key = `contestant-photos/${contestantId}-${uniqueId}.${fileExtension}`;
+      const key = `public/contestant-photos/${contestantId}-${uniqueId}.${fileExtension}`;
 
       // Upload the file
       const result = await uploadData({
-        key,
+        path: key,
         data: file,
         options: {
           contentType: file.type,
@@ -34,14 +34,14 @@ export class StorageService {
 
       // Get the public URL
       const urlResult = await getUrl({
-        key: result.key,
+        path: result.path,
         options: {
           expiresIn: PHOTO_URL_EXPIRATION_SECONDS
         }
       });
 
       return {
-        key: result.key,
+        key: result.path,
         url: urlResult.url.toString()
       };
     } catch (error) {
@@ -53,10 +53,10 @@ export class StorageService {
   /**
    * Get a public URL for a stored file
    */
-  async getFileUrl(key: string, expiresIn: number = DEFAULT_FILE_URL_EXPIRATION_SECONDS): Promise<string> {
+  async getFileUrl(path: string, expiresIn: number = DEFAULT_FILE_URL_EXPIRATION_SECONDS): Promise<string> {
     try {
       const result = await getUrl({
-        key,
+        path,
         options: { expiresIn }
       });
       return result.url.toString();
@@ -69,9 +69,9 @@ export class StorageService {
   /**
    * Delete a file from S3
    */
-  async deleteFile(key: string): Promise<void> {
+  async deleteFile(path: string): Promise<void> {
     try {
-      await remove({ key });
+      await remove({ path });
     } catch (error) {
       console.error('Failed to delete file:', error);
       throw new Error('Failed to delete file');
@@ -85,10 +85,10 @@ export class StorageService {
     try {
       const fileExtension = file.name.split('.').pop() || 'jpg';
       const uniqueId = crypto.randomUUID();
-      const key = `league-assets/${leagueId}/${assetType}-${uniqueId}.${fileExtension}`;
+      const key = `public/league-assets/${leagueId}/${assetType}-${uniqueId}.${fileExtension}`;
 
       const result = await uploadData({
-        key,
+        path: key,
         data: file,
         options: {
           contentType: file.type,
@@ -102,14 +102,14 @@ export class StorageService {
       }).result;
 
       const urlResult = await getUrl({
-        key: result.key,
+        path: result.path,
         options: {
           expiresIn: PHOTO_URL_EXPIRATION_SECONDS
         }
       });
 
       return {
-        key: result.key,
+        key: result.path,
         url: urlResult.url.toString()
       };
     } catch (error) {

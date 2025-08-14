@@ -1,5 +1,6 @@
 'use client';
 
+import './amplify'; // Ensure Amplify is configured before creating the client
 import { generateClient } from 'aws-amplify/data';
 import type { Schema } from '../../amplify/data/resource';
 

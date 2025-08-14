@@ -37,6 +37,7 @@ export class ContestantService extends BaseService {
       hometown: input.hometown,
       occupation: input.occupation,
       bio: input.bio,
+      profileImageUrl: input.profileImageUrl,
       isEliminated: false,
       totalPoints: 0,
       episodeScores: JSON.stringify([]),

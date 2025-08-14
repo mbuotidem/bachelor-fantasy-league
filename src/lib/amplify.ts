@@ -1,13 +1,11 @@
 'use client';
 
 import { Amplify } from 'aws-amplify';
+import amplifyConfig from '../../amplify_outputs.json';
 
 // Configure Amplify immediately when this module is loaded on the client
 if (typeof window !== 'undefined') {
-    import('../../amplify_outputs.json').then((amplifyConfig) => {
-        Amplify.configure(amplifyConfig.default);
-    }).catch((error) => {
-       console.error("Failed to load Amplify configuration:", error);
-    });
+    Amplify.configure(amplifyConfig);
 }
+
 export default Amplify;

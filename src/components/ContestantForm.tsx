@@ -178,6 +178,7 @@ export default function ContestantForm({ leagueId, contestant, onSubmit, onCance
         hometown: formData.hometown.trim() || undefined,
         occupation: formData.occupation.trim() || undefined,
         bio: formData.bio.trim() || undefined,
+        profileImageUrl: formData.profileImageUrl || undefined,
       };
 
       await onSubmit(submitData);

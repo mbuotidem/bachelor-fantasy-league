@@ -27,6 +27,14 @@ export class TeamService extends BaseService {
     // Use provided ownerId or get current authenticated user
     const ownerId = input.ownerId || await this.getCurrentUserId();
 
+    // Check if user already has a team in this league
+    const existingTeams = await this.getTeamsByLeague(input.leagueId);
+    const userExistingTeam = existingTeams.find(team => team.ownerId === ownerId);
+    
+    if (userExistingTeam) {
+      throw new ValidationError(`You already have a team in this league: "${userExistingTeam.name}". Each user can only have one team per league.`);
+    }
+
     const createData: CreateTeamData = {
       leagueId: input.leagueId,
       ownerId,
@@ -211,11 +219,41 @@ export class TeamService extends BaseService {
       throw new ValidationError('Team ID is required');
     }
 
-    return this.withRetry(async () => {
-      const response = await this.client.models.Team.delete({ id: teamId });
+    console.log(`Attempting to delete team with ID: ${teamId}`);
 
-      if (!response.data) {
-        throw new NotFoundError('Team', teamId);
+    // First check if the team exists
+    let teamExists = true;
+    try {
+      const team = await this.getTeam(teamId);
+      console.log(`Team found:`, team);
+    } catch (error) {
+      if (error instanceof NotFoundError) {
+        console.log(`Team ${teamId} already doesn't exist, considering it deleted`);
+        return;
+      }
+      console.error(`Error checking if team exists:`, error);
+      throw error;
+    }
+
+    return this.withRetry(async () => {
+      console.log(`Making delete request for team: ${teamId}`);
+      
+      try {
+        const response = await this.client.models.Team.delete({ id: teamId });
+        
+        console.log(`Delete response:`, response);
+
+        // Check for GraphQL errors
+        if (response.errors && response.errors.length > 0) {
+          console.error(`GraphQL errors:`, response.errors);
+          throw new Error(`GraphQL error: ${JSON.stringify(response.errors)}`);
+        }
+
+        console.log(`Team ${teamId} deleted successfully`);
+        
+      } catch (error) {
+        console.error(`Delete operation failed:`, error);
+        throw error;
       }
     });
   }
