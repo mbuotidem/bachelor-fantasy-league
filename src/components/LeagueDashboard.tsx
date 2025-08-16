@@ -91,7 +91,8 @@ export default function LeagueDashboard() {
   };
 
   const handleViewLeague = (league: LeagueWithTeam) => {
-    setViewingLeague(league);
+    // Navigate to the league page instead of using state
+    window.location.href = `/league/${league.id}`;
   };
 
   const handleBackToLeagues = () => {

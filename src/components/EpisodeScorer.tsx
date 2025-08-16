@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import styles from './EpisodeScorer.module.css';
 import { ScoringService } from '../services/scoring-service';
 import { ContestantService } from '../services/contestant-service';
 import { EpisodeService } from '../services/episode-service';
@@ -11,6 +12,8 @@ interface EpisodeScorerProps {
   leagueId: string;
   onScoreUpdate?: (event: ScoringEvent) => void;
   onError?: (error: string) => void;
+  className?: string;
+  fullHeight?: boolean;
 }
 
 interface ContestantScore {
@@ -28,7 +31,9 @@ interface RecentAction extends ScoringEvent {
 export const EpisodeScorer: React.FC<EpisodeScorerProps> = ({
   leagueId,
   onScoreUpdate,
-  onError
+  onError,
+  className = '',
+  fullHeight = true
 }) => {
   const [contestants, setContestants] = useState<Contestant[]>([]);
   const [activeEpisode, setActiveEpisode] = useState<Episode | null>(null);
@@ -40,6 +45,9 @@ export const EpisodeScorer: React.FC<EpisodeScorerProps> = ({
   const [showPositive, setShowPositive] = useState(true);
   const [showNegative, setShowNegative] = useState(false);
   const [undoQueue, setUndoQueue] = useState<string[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  
+  const animationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const scoringService = new ScoringService();
   const contestantService = new ContestantService();
@@ -50,9 +58,19 @@ export const EpisodeScorer: React.FC<EpisodeScorerProps> = ({
     loadData();
   }, [leagueId]);
 
+  // Cleanup animation timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (animationTimeoutRef.current) {
+        clearTimeout(animationTimeoutRef.current);
+      }
+    };
+  }, []);
+
   const loadData = async () => {
     try {
       setIsLoading(true);
+      setError(null); // Clear any previous errors
       
       // Load contestants and active episode in parallel
       const [contestantsData, activeEpisodeData] = await Promise.all([
@@ -102,7 +120,9 @@ export const EpisodeScorer: React.FC<EpisodeScorerProps> = ({
       }
     } catch (error) {
       console.error('Failed to load scoring data:', error);
-      onError?.('Failed to load scoring data. Please try again.');
+      const errorMessage = 'Failed to load scoring data. Please try again.';
+      setError(errorMessage);
+      onError?.(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -169,6 +189,7 @@ export const EpisodeScorer: React.FC<EpisodeScorerProps> = ({
 
     try {
       setIsScoring(true);
+      setError(null); // Clear any previous errors
 
       const scoreInput: ScoreActionInput = {
         episodeId: activeEpisode.id,
@@ -212,7 +233,9 @@ export const EpisodeScorer: React.FC<EpisodeScorerProps> = ({
 
     } catch (error) {
       console.error('Failed to score action:', error);
-      onError?.('Failed to score action. Please try again.');
+      const errorMessage = 'Failed to score action. Please try again.';
+      setError(errorMessage);
+      onError?.(errorMessage);
     } finally {
       setIsScoring(false);
     }
@@ -223,6 +246,7 @@ export const EpisodeScorer: React.FC<EpisodeScorerProps> = ({
 
     try {
       setIsScoring(true);
+      setError(null); // Clear any previous errors
       const eventId = undoQueue[0];
       const actionToUndo = recentActions.find(a => a.id === eventId);
 
@@ -248,34 +272,47 @@ export const EpisodeScorer: React.FC<EpisodeScorerProps> = ({
 
     } catch (error) {
       console.error('Failed to undo action:', error);
-      onError?.('Failed to undo action. Please try again.');
+      const errorMessage = 'Failed to undo action. Please try again.';
+      setError(errorMessage);
+      onError?.(errorMessage);
     } finally {
       setIsScoring(false);
     }
   }, [activeEpisode, undoQueue, recentActions, isScoring]);
 
   const showScoreAnimation = (contestantId: string, points: number) => {
+    // Clear any existing animation timeout
+    if (animationTimeoutRef.current) {
+      clearTimeout(animationTimeoutRef.current);
+    }
+
     // Create floating animation element
     const element = document.createElement('div');
-    element.className = `fixed z-50 pointer-events-none text-2xl font-bold ${
+    element.className = `fixed z-50 pointer-events-none text-6xl font-black ${
       points > 0 ? 'text-green-500' : 'text-red-500'
     }`;
     element.textContent = `${points > 0 ? '+' : ''}${points}`;
     element.style.left = '50%';
     element.style.top = '50%';
     element.style.transform = 'translate(-50%, -50%)';
-    element.style.animation = 'scoreFloat 1.5s ease-out forwards';
+    element.style.textShadow = '3px 3px 6px rgba(0, 0, 0, 0.5)';
+    element.style.webkitTextStroke = '2px white';
+    element.className += ` ${styles.scoreAnimation}`;
 
     document.body.appendChild(element);
 
-    setTimeout(() => {
-      document.body.removeChild(element);
-    }, 1500);
+    // Store timeout reference for cleanup
+    animationTimeoutRef.current = setTimeout(() => {
+      if (document.body.contains(element)) {
+        document.body.removeChild(element);
+      }
+      animationTimeoutRef.current = null;
+    }, 2000);
   };
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+      <div className={`flex items-center justify-center ${fullHeight ? 'min-h-screen' : 'min-h-96'} bg-gray-50 ${className}`}>
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading episode scorer...</p>
@@ -286,7 +323,7 @@ export const EpisodeScorer: React.FC<EpisodeScorerProps> = ({
 
   if (!activeEpisode) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+      <div className={`flex items-center justify-center ${fullHeight ? 'min-h-screen' : 'min-h-96'} bg-gray-50 ${className}`}>
         <div className="text-center p-6 max-w-md mx-auto">
           <div className="text-6xl mb-4">📺</div>
           <h2 className="text-2xl font-bold text-gray-800 mb-2">No Active Episode</h2>
@@ -307,7 +344,29 @@ export const EpisodeScorer: React.FC<EpisodeScorerProps> = ({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className={`${fullHeight ? 'min-h-screen' : ''} bg-gray-50 ${className}`}>
+      {/* Error Display */}
+      {error && (
+        <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-4 mx-4 mt-4">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <span className="text-red-400">⚠️</span>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-red-700">{error}</p>
+            </div>
+            <div className="ml-auto pl-3">
+              <button
+                onClick={() => setError(null)}
+                className="text-red-400 hover:text-red-600"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Mobile-Optimized Header */}
       <div className="bg-white shadow-sm border-b sticky top-0 z-40">
         <div className="px-4 py-4">
@@ -532,23 +591,6 @@ export const EpisodeScorer: React.FC<EpisodeScorerProps> = ({
         )}
       </div>
 
-      {/* Floating Score Animation Styles */}
-      <style jsx>{`
-        @keyframes scoreFloat {
-          0% {
-            opacity: 1;
-            transform: translate(-50%, -50%) scale(1);
-          }
-          50% {
-            opacity: 1;
-            transform: translate(-50%, -70%) scale(1.2);
-          }
-          100% {
-            opacity: 0;
-            transform: translate(-50%, -90%) scale(0.8);
-          }
-        }
-      `}</style>
     </div>
   );
 };

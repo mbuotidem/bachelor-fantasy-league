@@ -1,0 +1,32 @@
+@keyframes scoreFloat {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.5);
+    }
+
+    20% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(2.5);
+    }
+
+    50% {
+        opacity: 1;
+        transform: translate(-50%, -80%) scale(2);
+    }
+
+    80% {
+        opacity: 0.8;
+        transform: translate(-50%, -120%) scale(1.5);
+    }
+
+    100% {
+        opacity: 0;
+        transform: translate(-50%, -150%) scale(1);
+    }
+}
+
+.scoreAnimation {
+    animation: scoreFloat 2s ease-out forwards;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    font-weight: 900;
+}

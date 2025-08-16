@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import ContestantManager from './ContestantManager';
 import DraftBoard from './DraftBoard';
 import TeamManager from './TeamManager';
@@ -12,13 +13,18 @@ import type { League, Draft, Team } from '../types';
 interface LeagueDetailProps {
   league: League;
   isCommissioner: boolean;
+  initialTab?: TabType;
   onBack: () => void;
 }
 
 type TabType = 'contestants' | 'draft' | 'teams' | 'episodes' | 'scoring' | 'standings' | 'settings';
 
-export default function LeagueDetail({ league, isCommissioner, onBack }: LeagueDetailProps) {
-  const [activeTab, setActiveTab] = useState<TabType>('contestants');
+export default function LeagueDetail({ league, isCommissioner, initialTab = 'contestants', onBack }: LeagueDetailProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  
+  const [activeTab, setActiveTab] = useState<TabType>(initialTab);
   const [draft, setDraft] = useState<Draft | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string>('');
   const [teams, setTeams] = useState<Team[]>([]);
@@ -86,7 +92,7 @@ export default function LeagueDetail({ league, isCommissioner, onBack }: LeagueD
     try {
       const newDraft = await draftService.createDraft({ leagueId: league.id });
       setDraft(newDraft);
-      setActiveTab('draft');
+      handleTabChange('draft');
     } catch (error) {
       console.error('Error creating draft:', error);
       alert('Failed to create draft. Please try again.');
@@ -97,6 +103,14 @@ export default function LeagueDetail({ league, isCommissioner, onBack }: LeagueD
     setDraft(completedDraft);
     // Could show a success message or redirect
     alert('Draft completed successfully!');
+  };
+
+  const handleTabChange = (tab: TabType) => {
+    setActiveTab(tab);
+    // Update URL with new tab
+    const params = new URLSearchParams(searchParams);
+    params.set('tab', tab);
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
   };
 
   const tabs = [
@@ -178,7 +192,7 @@ export default function LeagueDetail({ league, isCommissioner, onBack }: LeagueD
             {/* Episode Scoring Button - Available when league is active */}
             {league.status === 'active' && (
               <button
-                onClick={() => setActiveTab('scoring')}
+                onClick={() => handleTabChange('scoring')}
                 className="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
               >
                 📱 Score Episode
@@ -187,7 +201,7 @@ export default function LeagueDetail({ league, isCommissioner, onBack }: LeagueD
             
             {draft && draft.status === 'not_started' && (
               <button
-                onClick={() => setActiveTab('draft')}
+                onClick={() => handleTabChange('draft')}
                 className="inline-flex items-center px-3 py-1 border border-rose-300 text-sm font-medium rounded-md text-rose-700 bg-rose-50 hover:bg-rose-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rose-500"
               >
                 Go to Draft
@@ -196,7 +210,7 @@ export default function LeagueDetail({ league, isCommissioner, onBack }: LeagueD
             
             {draft && draft.status === 'in_progress' && (
               <button
-                onClick={() => setActiveTab('draft')}
+                onClick={() => handleTabChange('draft')}
                 className="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-white bg-yellow-600 hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 animate-pulse"
               >
                 Draft Live!
@@ -222,7 +236,7 @@ export default function LeagueDetail({ league, isCommissioner, onBack }: LeagueD
               </div>
             </div>
             <button
-              onClick={() => setActiveTab('draft')}
+              onClick={() => handleTabChange('draft')}
               className="bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-2 rounded-lg font-semibold transition-colors"
             >
               Go to Draft →
@@ -255,7 +269,7 @@ export default function LeagueDetail({ league, isCommissioner, onBack }: LeagueD
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
+                  onClick={() => handleTabChange(tab.id)}
                   className={`flex-shrink-0 py-3 px-2 sm:px-4 border-b-2 font-medium text-xs sm:text-sm transition-colors whitespace-nowrap ${
                     activeTab === tab.id
                       ? 'border-rose-500 text-rose-600'
@@ -342,7 +356,7 @@ export default function LeagueDetail({ league, isCommissioner, onBack }: LeagueD
                 </div>
                 <div className="flex items-center space-x-3">
                   <button
-                    onClick={() => setActiveTab('episodes')}
+                    onClick={() => handleTabChange('episodes')}
                     className="text-sm px-3 py-1 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2"
                   >
                     📺 Manage Episodes
