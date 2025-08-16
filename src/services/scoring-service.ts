@@ -33,14 +33,23 @@ export class ScoringService extends BaseService {
       totalEvents: 0,
     };
 
-    return this.withRetry(async () => {
-      const response = await this.client.models.Episode.create(createData);
-      
-      if (!response.data) {
-        throw new Error('Failed to create episode');
-      }
+    console.log('ScoringService.createEpisode - Creating episode with data:', createData);
 
-      return this.transformEpisodeModel(response.data);
+    return this.withRetry(async () => {
+      try {
+        const response = await this.client.models.Episode.create(createData);
+        
+        console.log('ScoringService.createEpisode - Response:', response);
+        
+        if (!response.data) {
+          throw new Error('Failed to create episode - no data returned');
+        }
+
+        return this.transformEpisodeModel(response.data);
+      } catch (error) {
+        console.error('ScoringService.createEpisode - Error in create call:', error);
+        throw error;
+      }
     });
   }
 

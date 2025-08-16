@@ -27,17 +27,17 @@ export default function Home() {
         >
           {({ signOut, user }) => (
             <div className="min-h-screen bg-gray-50">
-              {/* Header */}
+              {/* Header - Mobile First */}
               <div className="bg-white shadow-sm border-b">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <h1 className="text-2xl font-bold text-rose-600">🌹 Bachelor Fantasy League</h1>
-                      <p className="text-gray-600">Welcome back, {user?.signInDetails?.loginId}!</p>
+                <div className="px-4 py-4">
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-3 sm:space-y-0">
+                    <div className="text-center sm:text-left">
+                      <h1 className="text-xl sm:text-2xl font-bold text-rose-600">🌹 Bachelor Fantasy League</h1>
+                      <p className="text-sm sm:text-base text-gray-600 truncate">Welcome back, {user?.signInDetails?.loginId}!</p>
                     </div>
                     <button
                       onClick={signOut}
-                      className="inline-flex items-center justify-center font-medium rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus:ring-blue-500 px-4 py-2 text-sm"
+                      className="w-full sm:w-auto inline-flex items-center justify-center font-medium rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus:ring-blue-500 px-4 py-2 text-sm"
                     >
                       Sign Out
                     </button>
@@ -45,13 +45,13 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Status indicators */}
+              {/* Status indicators - Mobile Optimized */}
               <div className="bg-green-50 border-b border-green-200">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-                  <div className="flex flex-wrap gap-4 text-sm items-center">
+                <div className="px-4 py-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 text-xs sm:text-sm">
                     <div className="flex items-center space-x-2">
                       <span className="text-green-500">✅</span>
-                      <span>Authentication system working</span>
+                      <span>Authentication working</span>
                     </div>
                     <div className="flex items-center space-x-2">
                       <span className="text-green-500">✅</span>
@@ -59,25 +59,26 @@ export default function Home() {
                     </div>
                     <div className="flex items-center space-x-2">
                       <span className="text-green-500">✅</span>
-                      <span>Contestant management with flip cards</span>
+                      <span>Contestant management</span>
                     </div>
                     <div className="flex items-center space-x-2">
                       <span className="text-green-500">✅</span>
-                      <span>Photo upload & S3 storage</span>
+                      <span>Photo upload & storage</span>
                     </div>
                     <div className="flex items-center space-x-2">
                       <span className="text-green-500">✅</span>
                       <span>Interactive draft system</span>
                     </div>
-                    <div className="ml-auto">
-          
+                    <div className="flex items-center space-x-2">
+                      <span className="text-green-500">✅</span>
+                      <span>Mobile episode scoring</span>
                     </div>
                   </div>
                 </div>
               </div>
               
-              {/* League Dashboard */}
-              <div className="py-8">
+              {/* League Dashboard - Mobile Optimized */}
+              <div className="py-4 sm:py-8">
                 <LeagueDashboard />
               </div>
             </div>

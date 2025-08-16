@@ -115,8 +115,7 @@ const schema = a.schema({
       scoringEvents: a.hasMany('ScoringEvent', 'episodeId'),
     })
     .authorization((allow) => [
-      allow.authenticated().to(['read']),
-      allow.owner().to(['create', 'update', 'delete'])
+      allow.authenticated().to(['read', 'create', 'update', 'delete'])
     ]),
 
   // ScoringEvent model
@@ -134,8 +133,7 @@ const schema = a.schema({
       contestant: a.belongsTo('Contestant', 'contestantId'),
     })
     .authorization((allow) => [
-      allow.authenticated().to(['read']),
-      allow.owner().to(['create', 'update', 'delete'])
+      allow.authenticated().to(['read', 'create', 'update', 'delete'])
     ]),
 
 
