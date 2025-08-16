@@ -5,6 +5,7 @@ export { TeamService } from './team-service';
 export { ContestantService } from './contestant-service';
 export { ScoringService } from './scoring-service';
 export { DraftService } from './draft-service';
+export { StandingsService } from './standings-service';
 
 // Export service input/output types
 export type { JoinLeagueInput, UpdateLeagueSettingsInput } from './league-service';
@@ -19,6 +20,7 @@ import { TeamService } from './team-service';
 import { ContestantService } from './contestant-service';
 import { ScoringService } from './scoring-service';
 import { DraftService } from './draft-service';
+import { StandingsService } from './standings-service';
 
 // Create service instances for easy import
 export const leagueService = new LeagueService();
@@ -26,3 +28,4 @@ export const teamService = new TeamService();
 export const contestantService = new ContestantService();
 export const scoringService = new ScoringService();
 export const draftService = new DraftService();
+export const standingsService = new StandingsService();
