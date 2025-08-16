@@ -1,6 +1,7 @@
 import { BaseService, ValidationError, NotFoundError } from './base-service';
 import type { Schema } from '../lib/api-client';
 import type { ScoringEvent, ScoreActionInput, Episode } from '../types';
+import { standingsEvents } from '../lib/standings-events';
 
 // Type definitions for GraphQL operations
 type ScoringEventModel = Schema['ScoringEvent']['type'];
@@ -160,7 +161,28 @@ export class ScoringService extends BaseService {
       // Update episode total events count
       await this.incrementEpisodeTotalEvents(input.episodeId);
 
-      return this.transformScoringEventModel(response.data);
+      const scoringEvent = this.transformScoringEventModel(response.data);
+
+      // Mark scoring activity for smart polling
+      try {
+        localStorage.setItem('last-scoring-activity', Date.now().toString());
+      } catch (error) {
+        console.warn('Failed to mark scoring activity:', error);
+      }
+
+      // Notify all connected clients about the scoring event
+      try {
+        standingsEvents.notifyScoringEvent('*', {
+          contestantId: input.contestantId,
+          episodeId: input.episodeId,
+          points: input.points,
+          actionType: input.actionType
+        });
+      } catch (error) {
+        console.warn('Failed to emit scoring event notification:', error);
+      }
+
+      return scoringEvent;
     });
   }
 
@@ -217,6 +239,24 @@ export class ScoringService extends BaseService {
 
       // Decrement episode total events count
       await this.decrementEpisodeTotalEvents(input.episodeId);
+
+      // Mark scoring activity for smart polling
+      try {
+        localStorage.setItem('last-scoring-activity', Date.now().toString());
+      } catch (error) {
+        console.warn('Failed to mark scoring activity:', error);
+      }
+
+      // Notify all connected clients about the undo event
+      try {
+        standingsEvents.notifyStandingsUpdate('*', {
+          type: 'undo',
+          episodeId: input.episodeId,
+          eventId: input.eventId
+        });
+      } catch (error) {
+        console.warn('Failed to emit undo event notification:', error);
+      }
     });
   }
 
