@@ -6,6 +6,7 @@ interface DraftTimerProps {
   timeLimit: number; // in seconds
   isActive: boolean;
   currentTurnId?: string; // ID of team whose turn it is
+  currentTurnStartedAt?: string; // ISO timestamp when current turn started
   onTimeExpired?: () => void;
   className?: string;
 }
@@ -14,19 +15,38 @@ export default function DraftTimer({
   timeLimit,
   isActive,
   currentTurnId,
+  currentTurnStartedAt,
   onTimeExpired,
   className = '',
 }: DraftTimerProps) {
   const [timeRemaining, setTimeRemaining] = useState(timeLimit);
   const [lastTurnId, setLastTurnId] = useState<string | undefined>(currentTurnId);
 
-  // Only reset timer when the turn actually changes (not on page refresh)
+  // Calculate initial time remaining based on server timestamp
+  const calculateTimeRemaining = (): number => {
+    if (!currentTurnStartedAt) {
+      return timeLimit;
+    }
+    
+    const startTime = new Date(currentTurnStartedAt).getTime();
+    const currentTime = Date.now();
+    const elapsedSeconds = Math.floor((currentTime - startTime) / 1000);
+    const remaining = Math.max(0, timeLimit - elapsedSeconds);
+    
+    return remaining;
+  };
+
+  // Initialize timer with server-synchronized time
   useEffect(() => {
-    if (isActive && currentTurnId && currentTurnId !== lastTurnId) {
+    if (isActive && currentTurnStartedAt) {
+      const remaining = calculateTimeRemaining();
+      setTimeRemaining(remaining);
+    } else if (isActive && currentTurnId && currentTurnId !== lastTurnId) {
+      // Fallback to old behavior if no timestamp available
       setTimeRemaining(timeLimit);
       setLastTurnId(currentTurnId);
     }
-  }, [isActive, currentTurnId, lastTurnId, timeLimit]);
+  }, [isActive, currentTurnId, currentTurnStartedAt, lastTurnId, timeLimit]);
 
   useEffect(() => {
     if (!isActive || timeRemaining <= 0) {

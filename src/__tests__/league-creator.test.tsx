@@ -131,10 +131,12 @@ describe('LeagueCreator', () => {
 
     const nameInput = screen.getByLabelText(/league name/i);
     const seasonInput = screen.getByLabelText(/season/i);
+    const teamNameInput = screen.getByLabelText(/your team name/i);
     const submitButton = screen.getByRole('button', { name: /create league/i });
 
     await user.type(nameInput, 'Test League');
     await user.type(seasonInput, 'Grant Ellis 2025');
+    await user.type(teamNameInput, 'Test Team');
     await user.click(submitButton);
 
     await waitFor(() => {
@@ -167,13 +169,15 @@ describe('LeagueCreator', () => {
 
     const nameInput = screen.getByLabelText(/league name/i);
     const seasonInput = screen.getByLabelText(/season/i);
+    const teamNameInput = screen.getByLabelText(/your team name/i);
     const submitButton = screen.getByRole('button', { name: /create league/i });
 
     await user.type(nameInput, 'Test League');
     await user.type(seasonInput, 'Grant Ellis 2025');
+    await user.type(teamNameInput, 'Test Team');
     await user.click(submitButton);
 
-    expect(screen.getByText(/creating league/i)).toBeInTheDocument();
+    expect(screen.getByText(/creating league\.\.\./i)).toBeInTheDocument();
     expect(submitButton).toBeDisabled();
 
     await waitFor(() => {
@@ -189,10 +193,12 @@ describe('LeagueCreator', () => {
 
     const nameInput = screen.getByLabelText(/league name/i);
     const seasonInput = screen.getByLabelText(/season/i);
+    const teamNameInput = screen.getByLabelText(/your team name/i);
     const submitButton = screen.getByRole('button', { name: /create league/i });
 
     await user.type(nameInput, 'Test League');
     await user.type(seasonInput, 'Grant Ellis 2025');
+    await user.type(teamNameInput, 'Test Team');
     await user.click(submitButton);
 
     await waitFor(() => {

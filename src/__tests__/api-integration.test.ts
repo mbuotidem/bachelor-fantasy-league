@@ -63,6 +63,13 @@ jest.mock('../lib/api-client', () => ({
         update: jest.fn(),
         delete: jest.fn(),
       },
+      User: {
+        create: jest.fn(),
+        get: jest.fn(),
+        list: jest.fn(),
+        update: jest.fn(),
+        delete: jest.fn(),
+      },
     }
   }
 }));
@@ -115,6 +122,21 @@ describe('API Integration Tests', () => {
           commissionerId: 'test-user-123',
           status: 'created',
           settings: JSON.stringify({}),
+          createdAt: '2024-01-01T00:00:00Z',
+          updatedAt: '2024-01-01T00:00:00Z',
+        }
+      });
+
+      // Mock User model operations for team creation
+      (client.models.User.list as jest.Mock).mockResolvedValue({
+        data: [] // No existing user
+      });
+
+      (client.models.User.create as jest.Mock).mockResolvedValue({
+        data: {
+          id: 'test-user-123',
+          email: 'test@example.com',
+          displayName: 'Test User',
           createdAt: '2024-01-01T00:00:00Z',
           updatedAt: '2024-01-01T00:00:00Z',
         }

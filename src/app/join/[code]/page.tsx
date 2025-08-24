@@ -6,6 +6,7 @@ import { authTheme } from '../../../lib/auth-theme';
 import LeagueJoin from '../../../components/LeagueJoin';
 import { useRouter } from 'next/navigation';
 import { use } from 'react';
+import { useUserSetup } from '../../../hooks/useUserSetup';
 
 interface JoinPageProps {
   params: Promise<{
@@ -16,6 +17,7 @@ interface JoinPageProps {
 export default function JoinPage({ params }: JoinPageProps) {
   const router = useRouter();
   const { code } = use(params);
+  useUserSetup();
 
   const handleJoinSuccess = async () => {
     
@@ -35,6 +37,7 @@ export default function JoinPage({ params }: JoinPageProps) {
     <ThemeProvider theme={authTheme}>
       <div className="min-h-screen bg-gradient-to-br from-pink-50 to-rose-100">
         <Authenticator
+          signUpAttributes={['given_name']}
           components={{
             Header() {
               return (

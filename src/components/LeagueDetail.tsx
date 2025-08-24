@@ -7,6 +7,8 @@ import DraftBoard from './DraftBoard';
 import TeamManager from './TeamManager';
 import EpisodeScorer from './EpisodeScorer';
 import EpisodeManager from './EpisodeManager';
+import StandingsDashboard from './StandingsDashboard';
+import CommissionerTeamCreator from './CommissionerTeamCreator';
 import { draftService, teamService } from '../services';
 import type { League, Draft, Team } from '../types';
 
@@ -28,6 +30,7 @@ export default function LeagueDetail({ league, isCommissioner, initialTab = 'con
   const [draft, setDraft] = useState<Draft | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string>('');
   const [teams, setTeams] = useState<Team[]>([]);
+  const [showTeamCreator, setShowTeamCreator] = useState(false);
 
   useEffect(() => {
     loadDraftData();
@@ -84,6 +87,16 @@ export default function LeagueDetail({ league, isCommissioner, initialTab = 'con
     const userTeam = teams.find(team => team.ownerId === currentUserId);
     
     return userTeam?.id === currentTeamId;
+  };
+
+  const commissionerHasTeam = (): boolean => {
+    if (!isCommissioner || !currentUserId) return false;
+    return teams.some(team => team.ownerId === currentUserId);
+  };
+
+  const handleTeamCreated = (team: Team) => {
+    setTeams(prev => [...prev, team]);
+    setShowTeamCreator(false);
   };
 
   const handleCreateDraft = async () => {
@@ -180,6 +193,15 @@ export default function LeagueDetail({ league, isCommissioner, initialTab = 'con
             </span>
             
             {/* Action Buttons */}
+            {isCommissioner && !commissionerHasTeam() && (
+              <button
+                onClick={() => setShowTeamCreator(true)}
+                className="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                ➕ Create My Team
+              </button>
+            )}
+            
             {isCommissioner && league.status === 'created' && !draft && (
               <button
                 onClick={handleCreateDraft}
@@ -225,8 +247,8 @@ export default function LeagueDetail({ league, isCommissioner, initialTab = 'con
         <div className="mb-6 bg-gradient-to-r from-green-500 to-blue-600 text-white rounded-lg p-4 shadow-lg animate-pulse">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="bg-white bg-opacity-20 rounded-full p-2">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="bg-yellow-400 rounded-full p-2">
+                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
               </div>
@@ -237,7 +259,7 @@ export default function LeagueDetail({ league, isCommissioner, initialTab = 'con
             </div>
             <button
               onClick={() => handleTabChange('draft')}
-              className="bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-2 rounded-lg font-semibold transition-colors"
+              className="bg-yellow-400 hover:bg-yellow-300 text-green-700 px-4 py-2 rounded-lg font-semibold transition-colors shadow-md"
             >
               Go to Draft →
             </button>
@@ -333,10 +355,41 @@ export default function LeagueDetail({ league, isCommissioner, initialTab = 'con
         )}
         
         {activeTab === 'teams' && (
-          <TeamManager 
-            leagueId={league.id} 
-            isCommissioner={isCommissioner}
-          />
+          <div>
+            {isCommissioner && !commissionerHasTeam() && (
+              <div className="bg-blue-50 border border-blue-200 rounded-md p-4 mb-4">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <h3 className="text-sm font-medium text-blue-800">
+                      Create Your Team
+                    </h3>
+                    <div className="mt-2 text-sm text-blue-700">
+                      <p>
+                        As the commissioner, you can create your own team to participate in the league.
+                      </p>
+                    </div>
+                    <div className="mt-4">
+                      <button
+                        onClick={() => setShowTeamCreator(true)}
+                        className="bg-blue-100 px-3 py-1 rounded-md text-sm font-medium text-blue-800 hover:bg-blue-200"
+                      >
+                        Create My Team
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+            <TeamManager 
+              leagueId={league.id} 
+              isCommissioner={isCommissioner}
+            />
+          </div>
         )}
         
         {activeTab === 'episodes' && (
@@ -384,11 +437,7 @@ export default function LeagueDetail({ league, isCommissioner, initialTab = 'con
         )}
         
         {activeTab === 'standings' && (
-          <div className="text-center py-12">
-            <div className="text-6xl mb-4">📊</div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">League Standings</h3>
-            <p className="text-gray-600">Standings and leaderboards will be implemented in Task 10.</p>
-          </div>
+          <StandingsDashboard leagueId={league.id} />
         )}
         
         {activeTab === 'settings' && isCommissioner && (
@@ -399,6 +448,19 @@ export default function LeagueDetail({ league, isCommissioner, initialTab = 'con
           </div>
         )}
       </div>
+      
+      {/* Commissioner Team Creation Modal */}
+      {showTeamCreator && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-md shadow-lg rounded-md bg-white">
+            <CommissionerTeamCreator
+              leagueId={league.id}
+              onTeamCreated={handleTeamCreated}
+              onCancel={() => setShowTeamCreator(false)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
