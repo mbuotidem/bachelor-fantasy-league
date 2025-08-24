@@ -17,9 +17,11 @@ interface StandingsEvent {
 class StandingsEventEmitter {
   private listeners: Map<string, Set<(event: StandingsEvent) => void>> = new Map();
   private isListeningToStorage = false;
+  private pollingInterval: NodeJS.Timeout | null = null;
+  private storageEventHandler: ((e: StorageEvent) => void) | null = null;
 
   constructor() {
-    this.setupStorageListener();
+    // Don't setup storage listener immediately - wait for first subscription
   }
 
   subscribe(leagueId: string, callback: (event: StandingsEvent) => void) {
@@ -30,6 +32,11 @@ class StandingsEventEmitter {
     }
     leagueListeners.add(callback);
 
+    // Setup storage listener if this is the first subscription
+    if (this.getTotalListenerCount() === 1) {
+      this.setupStorageListener();
+    }
+
     // Return unsubscribe function
     return () => {
       const leagueListeners = this.listeners.get(leagueId);
@@ -38,6 +45,11 @@ class StandingsEventEmitter {
         if (leagueListeners.size === 0) {
           this.listeners.delete(leagueId);
         }
+      }
+
+      // Cleanup storage listener if no listeners remain
+      if (this.getTotalListenerCount() === 0) {
+        this.cleanupStorageListener();
       }
     };
   }
@@ -128,6 +140,14 @@ class StandingsEventEmitter {
     });
   }
 
+  private getTotalListenerCount(): number {
+    let total = 0;
+    this.listeners.forEach(leagueListeners => {
+      total += leagueListeners.size;
+    });
+    return total;
+  }
+
   private setupStorageListener() {
     if (this.isListeningToStorage || typeof window === 'undefined') {
       return;
@@ -136,7 +156,7 @@ class StandingsEventEmitter {
     this.isListeningToStorage = true;
     let lastProcessedTimestamp = Date.now();
 
-    const handleStorageEvent = (e: StorageEvent) => {
+    this.storageEventHandler = (e: StorageEvent) => {
       if (e.key && e.key.startsWith('standings-event-') && e.newValue) {
         try {
           const eventData = JSON.parse(e.newValue);
@@ -155,8 +175,13 @@ class StandingsEventEmitter {
       }
     };
 
-    // Also poll for new events every 2 seconds as a fallback
+    // Fallback polling function
     const pollForEvents = () => {
+      // Only poll if we still have listeners
+      if (this.getTotalListenerCount() === 0) {
+        return;
+      }
+
       try {
         const keys = Object.keys(localStorage).filter(key => key.startsWith('standings-event-'));
         keys.forEach(key => {
@@ -175,10 +200,30 @@ class StandingsEventEmitter {
       }
     };
 
-    window.addEventListener('storage', handleStorageEvent);
+    window.addEventListener('storage', this.storageEventHandler);
     
-    // Fallback polling every 2 seconds
-    setInterval(pollForEvents, 10000);
+    // Fallback polling every 10 seconds (only when listeners exist)
+    this.pollingInterval = setInterval(pollForEvents, 10000);
+  }
+
+  private cleanupStorageListener() {
+    if (!this.isListeningToStorage || typeof window === 'undefined') {
+      return;
+    }
+
+    this.isListeningToStorage = false;
+
+    // Remove storage event listener
+    if (this.storageEventHandler) {
+      window.removeEventListener('storage', this.storageEventHandler);
+      this.storageEventHandler = null;
+    }
+
+    // Clear polling interval
+    if (this.pollingInterval) {
+      clearInterval(this.pollingInterval);
+      this.pollingInterval = null;
+    }
   }
 }
 

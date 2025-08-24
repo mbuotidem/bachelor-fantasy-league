@@ -55,8 +55,8 @@ export default function ContestantLeaderboard({
 
   // Smart polling that increases frequency during active scoring periods
   useEffect(() => {
-    let interval: NodeJS.Timeout;
-    let fastInterval: NodeJS.Timeout;
+    let pollingInterval: NodeJS.Timeout;
+    let activityCheckInterval: NodeJS.Timeout;
     
     // Check if there's been recent scoring activity
     const checkRecentActivity = () => {
@@ -68,39 +68,43 @@ export default function ContestantLeaderboard({
       return false;
     };
 
+    // Single polling function with dynamic timing
+    const poll = () => {
+      if (!document.hidden && !loading) {
+        loadStandings();
+      }
+    };
+
+    // Setup polling with dynamic intervals
     const setupPolling = () => {
       // Clear existing intervals
-      if (interval) clearInterval(interval);
-      if (fastInterval) clearInterval(fastInterval);
+      if (pollingInterval) clearInterval(pollingInterval);
+      if (activityCheckInterval) clearInterval(activityCheckInterval);
 
-      if (checkRecentActivity()) {
-        // Fast polling during active scoring (every 5 seconds)
-        fastInterval = setInterval(() => {
-          if (!document.hidden && !loading) {
-            loadStandings();
-          }
-        }, 5000);
+      const isActive = checkRecentActivity();
+      const pollInterval = isActive ? 5000 : 30000; // 5s when active, 30s when inactive
+      
+      // Start polling
+      pollingInterval = setInterval(poll, pollInterval);
+      
+      // Check activity status periodically and restart polling if needed
+      const checkInterval = isActive ? 300000 : 60000; // 5min when active, 1min when inactive
+      activityCheckInterval = setInterval(() => {
+        const currentlyActive = checkRecentActivity();
+        const currentInterval = currentlyActive ? 5000 : 30000;
         
-        // Check again in 5 minutes to see if we should slow down
-        setTimeout(setupPolling, 300000);
-      } else {
-        // Slow polling when inactive (every 30 seconds)
-        interval = setInterval(() => {
-          if (!document.hidden && !loading) {
-            loadStandings();
-          }
-        }, 30000);
-        
-        // Check every minute to see if activity has resumed
-        setTimeout(setupPolling, 60000);
-      }
+        // Only restart if the interval needs to change
+        if (currentInterval !== pollInterval) {
+          setupPolling();
+        }
+      }, checkInterval);
     };
 
     setupPolling();
 
     return () => {
-      if (interval) clearInterval(interval);
-      if (fastInterval) clearInterval(fastInterval);
+      if (pollingInterval) clearInterval(pollingInterval);
+      if (activityCheckInterval) clearInterval(activityCheckInterval);
     };
   }, [loading]);
 
