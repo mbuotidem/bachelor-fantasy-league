@@ -3,6 +3,9 @@
  * This will be replaced with GraphQL subscriptions in Task 11
  */
 
+// Import React for the hook
+import React from 'react';
+
 type StandingsEventType = 'standings-updated' | 'scoring-event';
 
 interface StandingsEvent {
@@ -20,10 +23,12 @@ class StandingsEventEmitter {
   }
 
   subscribe(leagueId: string, callback: (event: StandingsEvent) => void) {
-    if (!this.listeners.has(leagueId)) {
-      this.listeners.set(leagueId, new Set());
+    let leagueListeners = this.listeners.get(leagueId);
+    if (!leagueListeners) {
+      leagueListeners = new Set();
+      this.listeners.set(leagueId, leagueListeners);
     }
-    this.listeners.get(leagueId)!.add(callback);
+    leagueListeners.add(callback);
 
     // Return unsubscribe function
     return () => {
@@ -78,7 +83,7 @@ class StandingsEventEmitter {
         ...event,
         timestamp: Date.now(),
         source: 'standings-events',
-        id: Math.random().toString(36).substr(2, 9)
+        id: crypto.randomUUID()
       };
       
       // Set the event data with a unique key
@@ -173,7 +178,7 @@ class StandingsEventEmitter {
     window.addEventListener('storage', handleStorageEvent);
     
     // Fallback polling every 2 seconds
-    setInterval(pollForEvents, 2000);
+    setInterval(pollForEvents, 10000);
   }
 }
 
@@ -201,6 +206,3 @@ export function useStandingsEvents(leagueId: string, onUpdate: () => void) {
 
   return isSubscribed;
 }
-
-// Import React for the hook
-import React from 'react';

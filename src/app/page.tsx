@@ -4,12 +4,16 @@ import { Authenticator, ThemeProvider } from '@aws-amplify/ui-react';
 import '@aws-amplify/ui-react/styles.css';
 import { authTheme } from '../lib/auth-theme';
 import LeagueDashboard from '../components/LeagueDashboard';
+import { useUserSetup } from '../hooks/useUserSetup';
 
 export default function Home() {
+  useUserSetup();
+  
   return (
     <ThemeProvider theme={authTheme}>
       <div className="min-h-screen bg-gradient-to-br from-pink-50 to-rose-100">
         <Authenticator
+          signUpAttributes={['given_name']}
           components={{
             Header() {
               return (

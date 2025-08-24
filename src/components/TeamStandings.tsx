@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { TeamStanding } from '../types';
 import { StandingsService } from '../services/standings-service';
 import { useStandingsEvents } from '../lib/standings-events';
+import UserMigrationButton from './UserMigrationButton';
 
 interface TeamStandingsProps {
   leagueId: string;
@@ -172,7 +173,7 @@ export default function TeamStandings({ leagueId, onTeamClick, className = '' }:
     <div className={className}>
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
         <div className="px-4 py-3 border-b border-gray-200 bg-gray-50 rounded-t-lg">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mb-3">
             <h3 className="text-lg font-semibold text-gray-900 flex items-center">
               <span className="mr-2">🏆</span>
               Team Standings
@@ -193,6 +194,11 @@ export default function TeamStandings({ leagueId, onTeamClick, className = '' }:
               </svg>
             </button>
           </div>
+          
+          {/* Show migration button if we detect owner names that look like IDs */}
+          {standings.some(s => s.ownerName.includes('Team Owner (') || s.ownerName.includes('Owner ')) && (
+            <UserMigrationButton leagueId={leagueId} />
+          )}
         </div>
         
         <div className="divide-y divide-gray-200">

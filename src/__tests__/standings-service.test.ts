@@ -3,6 +3,7 @@ import { TeamService } from '../services/team-service';
 import { ContestantService } from '../services/contestant-service';
 import { LeagueService } from '../services/league-service';
 import { ScoringService } from '../services/scoring-service';
+import { UserService } from '../services/user-service';
 import { Team, Contestant, TeamStanding, ContestantStanding } from '../types';
 
 // Mock the services
@@ -10,11 +11,13 @@ jest.mock('../services/team-service');
 jest.mock('../services/contestant-service');
 jest.mock('../services/league-service');
 jest.mock('../services/scoring-service');
+jest.mock('../services/user-service');
 
 const MockedTeamService = TeamService as jest.MockedClass<typeof TeamService>;
 const MockedContestantService = ContestantService as jest.MockedClass<typeof ContestantService>;
 const MockedLeagueService = LeagueService as jest.MockedClass<typeof LeagueService>;
 const MockedScoringService = ScoringService as jest.MockedClass<typeof ScoringService>;
+const MockedUserService = UserService as jest.MockedClass<typeof UserService>;
 
 describe('StandingsService', () => {
   let standingsService: StandingsService;
@@ -22,6 +25,7 @@ describe('StandingsService', () => {
   let mockContestantService: jest.Mocked<ContestantService>;
   let mockLeagueService: jest.Mocked<LeagueService>;
   let mockScoringService: jest.Mocked<ScoringService>;
+  let mockUserService: jest.Mocked<UserService>;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -30,6 +34,7 @@ describe('StandingsService', () => {
     mockContestantService = new MockedContestantService() as jest.Mocked<ContestantService>;
     mockLeagueService = new MockedLeagueService() as jest.Mocked<LeagueService>;
     mockScoringService = new MockedScoringService() as jest.Mocked<ScoringService>;
+    mockUserService = new MockedUserService() as jest.Mocked<UserService>;
     
     standingsService = new StandingsService();
     
@@ -38,9 +43,13 @@ describe('StandingsService', () => {
     (standingsService as any).contestantService = mockContestantService;
     (standingsService as any).leagueService = mockLeagueService;
     (standingsService as any).scoringService = mockScoringService;
+    (standingsService as any).userService = mockUserService;
     
     // Mock scoring service to return empty arrays (no scoring events)
     mockScoringService.getContestantScores.mockResolvedValue([]);
+    
+    // Mock user service to throw error so fallback logic is used
+    mockUserService.getUser.mockRejectedValue(new Error('User not found'));
   });
 
   describe('getTeamStandings', () => {

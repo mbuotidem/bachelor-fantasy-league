@@ -3,14 +3,15 @@ import { TeamService } from './team-service';
 import { ContestantService } from './contestant-service';
 import { LeagueService } from './league-service';
 import { ScoringService } from './scoring-service';
-import { 
-  TeamStanding, 
-  ContestantStanding, 
-  TeamDetail, 
-  Team, 
-  Contestant, 
+import { UserService } from './user-service';
+import {
+  TeamStanding,
+  ContestantStanding,
+  TeamDetail,
+  Team,
+  Contestant,
   User,
-  ContestantSummary 
+  ContestantSummary
 } from '../types';
 
 export class StandingsService extends BaseService {
@@ -18,6 +19,7 @@ export class StandingsService extends BaseService {
   private contestantService: ContestantService;
   private leagueService: LeagueService;
   private scoringService: ScoringService;
+  private userService: UserService;
 
   constructor() {
     super();
@@ -25,6 +27,7 @@ export class StandingsService extends BaseService {
     this.contestantService = new ContestantService();
     this.leagueService = new LeagueService();
     this.scoringService = new ScoringService();
+    this.userService = new UserService();
   }
 
   /**
@@ -34,33 +37,33 @@ export class StandingsService extends BaseService {
     try {
       const teams = await this.teamService.getTeamsByLeague(leagueId);
       const contestants = await this.contestantService.getContestantsByLeague(leagueId);
-      
+
       // Get all scoring events for contestants in this league to calculate actual points
       const contestantScores = await this.getContestantScoresMap(contestants);
-      
+
       // Create a map of contestant data for quick lookup
       const contestantMap = new Map(contestants.map(c => [c.id, c]));
-      
+
       // Calculate standings for each team
       const standings: TeamStanding[] = await Promise.all(
         teams.map(async (team) => {
           // Get owner information - for now use ownerId as display name
           // In a real app, this would fetch user details from a User service
           const ownerName = await this.getOwnerDisplayName(team.ownerId);
-          
+
           // Calculate team's total points from actual scoring events
           let teamTotalPoints = 0;
           let teamEpisodePoints = 0;
-          
+
           // Get contestant summaries for this team with actual points
           const teamContestants: ContestantSummary[] = team.draftedContestants
             .map(contestantId => {
               const contestant = contestantMap.get(contestantId);
               if (!contestant) return null;
-              
+
               const contestantPoints = contestantScores.get(contestantId) || { total: 0, episode: 0 };
               teamTotalPoints += contestantPoints.total;
-              
+
               return {
                 id: contestant.id,
                 name: contestant.name,
@@ -106,18 +109,20 @@ export class StandingsService extends BaseService {
     try {
       const contestants = await this.contestantService.getContestantsByLeague(leagueId);
       const teams = await this.teamService.getTeamsByLeague(leagueId);
-      
+
       // Get all scoring events for contestants to calculate actual points
       const contestantScores = await this.getContestantScoresMap(contestants);
-      
+
       // Create a map to find which teams drafted each contestant
       const contestantTeamMap = new Map<string, string[]>();
       teams.forEach(team => {
         team.draftedContestants.forEach(contestantId => {
-          if (!contestantTeamMap.has(contestantId)) {
-            contestantTeamMap.set(contestantId, []);
+          let teamsArr = contestantTeamMap.get(contestantId);
+          if (!teamsArr) {
+            teamsArr = [];
+            contestantTeamMap.set(contestantId, teamsArr);
           }
-          contestantTeamMap.get(contestantId)!.push(team.name);
+          teamsArr.push(team.name);
         });
       });
 
@@ -157,7 +162,7 @@ export class StandingsService extends BaseService {
     try {
       const team = await this.teamService.getTeam(teamId);
       const owner = await this.getUserById(team.ownerId);
-      
+
       // Get full contestant data for drafted contestants
       const contestants: Contestant[] = [];
       for (const contestantId of team.draftedContestants) {
@@ -196,7 +201,7 @@ export class StandingsService extends BaseService {
   async getCurrentEpisodeTopPerformers(leagueId: string, limit: number = 5): Promise<ContestantStanding[]> {
     try {
       const standings = await this.getContestantStandings(leagueId);
-      
+
       // Filter to only contestants with episode points and sort by episode points
       return standings
         .filter(standing => standing.episodePoints > 0)
@@ -213,28 +218,28 @@ export class StandingsService extends BaseService {
    */
   private async getContestantScoresMap(contestants: Contestant[]): Promise<Map<string, { total: number; episode: number }>> {
     const scoresMap = new Map<string, { total: number; episode: number }>();
-    
+
     // Get the most recent episode to calculate current episode points
     const currentEpisodeId = await this.getCurrentEpisodeId();
-    
+
     // Calculate points for each contestant from their scoring events
     await Promise.all(
       contestants.map(async (contestant) => {
         try {
           const scoringEvents = await this.scoringService.getContestantScores(contestant.id);
-          
+
           // If we have scoring events, use them
           if (scoringEvents.length > 0) {
             // Calculate total points from all scoring events
             const totalPoints = scoringEvents.reduce((sum, event) => sum + event.points, 0);
-            
+
             // Calculate current episode points
-            const episodePoints = currentEpisodeId 
+            const episodePoints = currentEpisodeId
               ? scoringEvents
-                  .filter(event => event.episodeId === currentEpisodeId)
-                  .reduce((sum, event) => sum + event.points, 0)
+                .filter(event => event.episodeId === currentEpisodeId)
+                .reduce((sum, event) => sum + event.points, 0)
               : 0;
-            
+
             scoresMap.set(contestant.id, {
               total: totalPoints,
               episode: episodePoints
@@ -258,7 +263,7 @@ export class StandingsService extends BaseService {
         }
       })
     );
-    
+
     return scoresMap;
   }
 
@@ -281,7 +286,7 @@ export class StandingsService extends BaseService {
    */
   private calculateContestantCurrentEpisodePoints(contestant: Contestant): number {
     if (contestant.episodeScores.length === 0) return 0;
-    
+
     // Get the most recent episode score
     const latestEpisode = contestant.episodeScores[contestant.episodeScores.length - 1];
     return latestEpisode?.points || 0;
@@ -292,7 +297,7 @@ export class StandingsService extends BaseService {
    */
   private calculateTeamCurrentEpisodePoints(team: Team): number {
     if (team.episodeScores.length === 0) return 0;
-    
+
     // Get the most recent episode score
     const latestEpisode = team.episodeScores[team.episodeScores.length - 1];
     return latestEpisode?.points || 0;
@@ -303,41 +308,60 @@ export class StandingsService extends BaseService {
    * In a real app, this would fetch from a User service or database
    */
   private async getOwnerDisplayName(ownerId: string): Promise<string> {
-    // For now, create a readable display name from the ownerId
-    // In a real app, this would fetch user details from a User service
-    if (ownerId.includes('user')) {
-      const userNumber = ownerId.replace(/[^0-9]/g, '');
-      return userNumber ? `User ${userNumber}` : 'Team Owner';
+    try {
+      // First try to get user from our database
+      const user = await this.userService.getUser(ownerId);
+      return user.displayName;
+    } catch (error) {
+      // If user not found in database, create a better display name
+      // Check if this looks like a Cognito user ID (typically alphanumeric)
+      if (/^[a-f0-9-]{8,}$/i.test(ownerId)) {
+        // For Cognito-style IDs, create a more friendly name
+        const shortId = ownerId.substring(0, 8);
+        return `Team Owner (${shortId})`;
+      }
+      
+      // For test/mock user IDs
+      if (ownerId.includes('user')) {
+        const userNumber = ownerId.replace(/[^0-9]/g, '');
+        return userNumber ? `User ${userNumber}` : 'Team Owner';
+      }
+
+      // Generic fallback
+      const shortId = ownerId.substring(0, 8);
+      return `Team Owner (${shortId})`;
     }
-    
-    // Try to make the ID more readable
-    const shortId = ownerId.substring(0, 8);
-    return `Owner ${shortId}`;
   }
 
   /**
-   * Get user by ID - placeholder implementation
-   * In a real app, this would fetch from a User service
+   * Get user by ID using the user service
    */
   private async getUserById(userId: string): Promise<User> {
-    const displayName = await this.getOwnerDisplayName(userId);
-    
-    return {
-      id: userId,
-      email: `${userId}@example.com`,
-      displayName,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      preferences: {
-        notifications: {
-          email: true,
-          push: true,
-          scoring: true,
-          draft: true
-        },
-        theme: 'light',
-        timezone: 'America/New_York'
-      }
-    };
+    try {
+      return await this.userService.getUser(userId);
+    } catch (error) {
+      // Fallback to display name if user not found in database
+      const displayName = await this.getOwnerDisplayName(userId);
+      
+      // Return a minimal user object for backwards compatibility
+      // In production, you might want to create the user or handle this differently
+      return {
+        id: userId,
+        email: `${displayName.toLowerCase().replace(/\s+/g, '.')}@placeholder.local`,
+        displayName,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        preferences: {
+          notifications: {
+            email: true,
+            push: true,
+            scoring: true,
+            draft: true
+          },
+          theme: 'light',
+          timezone: 'America/New_York'
+        }
+      };
+    }
   }
 }

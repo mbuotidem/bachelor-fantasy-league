@@ -1,6 +1,9 @@
 import { BaseService, ValidationError, NotFoundError } from './base-service';
 import type { Schema } from '../lib/api-client';
 import type { Team, CreateTeamInput, EpisodeScore } from '../types';
+import { UserService } from './user-service';
+import { getCurrentUserDetails } from '../lib/auth-utils';
+import { fetchUserAttributes } from 'aws-amplify/auth';
 
 // Type definitions for GraphQL operations
 type TeamModel = Schema['Team']['type'];
@@ -19,6 +22,12 @@ export interface AddContestantToTeamInput {
 }
 
 export class TeamService extends BaseService {
+  private userService: UserService;
+
+  constructor() {
+    super();
+    this.userService = new UserService();
+  }
 
   // Create a new team
   async createTeam(input: CreateTeamInput): Promise<Team> {
@@ -26,6 +35,9 @@ export class TeamService extends BaseService {
 
     // Use provided ownerId or get current authenticated user
     const ownerId = input.ownerId || await this.getCurrentUserId();
+
+    // Ensure user record exists in database
+    await this.ensureUserExists(ownerId);
 
     // Check if user already has a team in this league
     const existingTeams = await this.getTeamsByLeague(input.leagueId);
@@ -310,5 +322,58 @@ export class TeamService extends BaseService {
       createdAt: model.createdAt,
       updatedAt: model.updatedAt,
     };
+  }
+
+  /**
+   * Ensure a user record exists in the database for the given user ID
+   * This creates a user record if one doesn't exist, using auth details when possible
+   */
+  private async ensureUserExists(userId: string): Promise<void> {
+    try {
+      // Check if user already exists
+      await this.userService.getUser(userId);
+      return; // User exists, nothing to do
+    } catch (error) {
+      // User doesn't exist, try to create one
+      try {
+        const currentUserId = await this.getCurrentUserId();
+        let email = `user-${userId.substring(0, 8)}@placeholder.local`;
+        let displayName = `Team Owner (${userId.substring(0, 8)})`;
+
+        // If this is the current user, try to get better details
+        if (userId === currentUserId) {
+          try {
+            const userDetails = await getCurrentUserDetails();
+            email = userDetails.signInDetails?.loginId || email;
+            displayName = userDetails.username || displayName;
+            
+            // Try to get name from Cognito attributes
+            try {
+              const attributes = await fetchUserAttributes();
+              const givenName = attributes.given_name;
+              const familyName = attributes.family_name;
+              
+              if (givenName) {
+                displayName = familyName ? `${givenName} ${familyName}` : givenName;
+              }
+            } catch (attributeError) {
+              console.warn('Could not fetch user attributes:', attributeError);
+            }
+          } catch (authError) {
+            console.warn('Could not get current user details:', authError);
+          }
+        }
+
+        await this.userService.createUser({
+          email,
+          displayName
+        });
+
+        console.log(`Created user record for ${userId} with display name: ${displayName}`);
+      } catch (createError) {
+        console.warn(`Could not create user record for ${userId}:`, createError);
+        // Don't throw error - team creation should still succeed even if user creation fails
+      }
+    }
   }
 }

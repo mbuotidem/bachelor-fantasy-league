@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { LeagueService } from '../services/league-service';
+import { TeamService } from '../services/team-service';
 import { validateCreateLeagueInput } from '../lib/validation';
 import type { CreateLeagueInput, League, ValidationError } from '../types';
 
@@ -28,11 +29,16 @@ export default function LeagueCreator({ onLeagueCreated, onCancel }: LeagueCreat
     },
   });
 
+  // Team creation options
+  const [createTeam, setCreateTeam] = useState(true);
+  const [teamName, setTeamName] = useState('');
+
   const [errors, setErrors] = useState<ValidationError[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const leagueService = new LeagueService();
+  const teamService = new TeamService();
 
   const handleInputChange = (field: keyof CreateLeagueInput, value: string) => {
     setFormData(prev => ({
@@ -67,8 +73,29 @@ export default function LeagueCreator({ onLeagueCreated, onCancel }: LeagueCreat
       return;
     }
 
+    // Validate team name if creating a team
+    if (createTeam && !teamName.trim()) {
+      setErrors([{ field: 'teamName', message: 'Team name is required when creating a team' }]);
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
       const league = await leagueService.createLeague(formData);
+      
+      // If user wants to create a team, create it now
+      if (createTeam && teamName.trim()) {
+        try {
+          await teamService.createTeam({
+            leagueId: league.id,
+            name: teamName.trim(),
+          });
+        } catch (teamError) {
+          console.warn('League created but team creation failed:', teamError);
+          // Don't fail the whole process if team creation fails
+        }
+      }
+      
       onLeagueCreated?.(league);
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : 'Failed to create league');
@@ -131,6 +158,53 @@ export default function LeagueCreator({ onLeagueCreated, onCancel }: LeagueCreat
           {getFieldError('season') && (
             <p className="mt-1 text-sm text-red-600">{getFieldError('season')}</p>
           )}
+        </div>
+
+        {/* Commissioner Team Creation */}
+        <div className="border-t pt-6">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Commissioner Team</h3>
+          
+          <div className="space-y-4">
+            <div className="flex items-start">
+              <div className="flex items-center h-5">
+                <input
+                  id="createTeam"
+                  type="checkbox"
+                  checked={createTeam}
+                  onChange={(e) => setCreateTeam(e.target.checked)}
+                  className="focus:ring-rose-500 h-4 w-4 text-rose-600 border-gray-300 rounded"
+                />
+              </div>
+              <div className="ml-3 text-sm">
+                <label htmlFor="createTeam" className="font-medium text-gray-700">
+                  Create my team now
+                </label>
+                <p className="text-gray-500">
+                  As the commissioner, create your team along with the league. You can also create it later.
+                </p>
+              </div>
+            </div>
+
+            {createTeam && (
+              <div>
+                <label htmlFor="teamName" className="block text-sm font-medium text-gray-700 mb-2">
+                  Your Team Name *
+                </label>
+                <input
+                  type="text"
+                  id="teamName"
+                  value={teamName}
+                  onChange={(e) => setTeamName(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-rose-500"
+                  placeholder="e.g., Team Rose Power"
+                  maxLength={50}
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  You can change this later if needed
+                </p>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* League Settings */}
