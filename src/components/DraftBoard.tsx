@@ -6,6 +6,7 @@ import type { Draft, Contestant, Team } from '../types';
 import ContestantCard from './ContestantCard';
 import DraftTimer from './DraftTimer';
 import TeamRoster from './TeamRoster';
+import DraftDebug from './DraftDebug';
 
 interface DraftBoardProps {
   leagueId: string;
@@ -22,12 +23,12 @@ interface DraftContestantCardProps {
   draftedByTeam?: string;
 }
 
-function DraftContestantCard({ 
-  contestant, 
-  onSelect, 
-  isSelectable, 
-  isDrafted, 
-  draftedByTeam 
+function DraftContestantCard({
+  contestant,
+  onSelect,
+  isSelectable,
+  isDrafted,
+  draftedByTeam
 }: DraftContestantCardProps) {
   const handleClick = () => {
     if (isSelectable && !isDrafted) {
@@ -37,22 +38,21 @@ function DraftContestantCard({
 
   return (
     <div className="relative">
-      <div 
-        className={`transition-all duration-200 ${
-          isDrafted 
-            ? 'opacity-50 grayscale cursor-not-allowed' 
-            : isSelectable 
-              ? 'cursor-pointer hover:scale-105 hover:shadow-xl ring-4 ring-green-400 ring-opacity-75 shadow-lg transform hover:-translate-y-1' 
-              : 'opacity-60 cursor-not-allowed'
-        }`}
+      <div
+        className={`transition-all duration-200 ${isDrafted
+          ? 'opacity-50 grayscale cursor-not-allowed'
+          : isSelectable
+            ? 'cursor-pointer hover:scale-105 hover:shadow-xl ring-4 ring-green-400 ring-opacity-75 shadow-lg transform hover:-translate-y-1'
+            : 'opacity-60 cursor-not-allowed'
+          }`}
         onClick={handleClick}
       >
-        <ContestantCard 
-          contestant={contestant} 
+        <ContestantCard
+          contestant={contestant}
           showActions={false}
         />
       </div>
-      
+
       {/* Draft status overlay */}
       {isDrafted && (
         <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-60 rounded-lg">
@@ -64,22 +64,17 @@ function DraftContestantCard({
           </div>
         </div>
       )}
-      
-      {/* Selectable indicator - much more prominent */}
+
+      {/* Selectable indicator */}
       {isSelectable && !isDrafted && (
         <>
           <div className="absolute top-2 left-2 bg-green-600 text-white px-3 py-1 rounded-full text-sm font-bold animate-bounce shadow-lg pointer-events-none">
             🎯 CLICK TO DRAFT
           </div>
           <div className="absolute inset-0 border-4 border-green-400 border-dashed rounded-lg animate-pulse pointer-events-none"></div>
-          <div className="absolute bottom-2 right-2 bg-green-600 text-white p-2 rounded-full shadow-lg animate-pulse pointer-events-none">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" />
-            </svg>
-          </div>
         </>
       )}
-      
+
       {/* Not your turn indicator */}
       {!isSelectable && !isDrafted && (
         <div className="absolute top-2 left-2 bg-gray-500 text-white px-2 py-1 rounded-full text-xs font-medium">
@@ -97,6 +92,7 @@ export default function DraftBoard({ leagueId, currentUserId, isCommissioner = f
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [makingPick, setMakingPick] = useState(false);
+  const [showDebug, setShowDebug] = useState(false);
 
   const loadDraftData = useCallback(async () => {
     try {
@@ -122,74 +118,78 @@ export default function DraftBoard({ leagueId, currentUserId, isCommissioner = f
     }
   }, [leagueId]);
 
-  // Load draft data
+  // Load draft data on mount
   useEffect(() => {
     loadDraftData();
   }, [loadDraftData]);
 
-  // Set up real-time updates (simplified for now)
+  // Set up polling for live updates during active draft
   useEffect(() => {
-    if (!draft) return;
-
-    // Poll for updates every 30 seconds during active draft (much less aggressive)
-    if (draft.status === 'in_progress') {
+    if (draft?.status === 'in_progress') {
       const interval = setInterval(() => {
-        // Only poll if the page is visible
         if (!document.hidden) {
           loadDraftData();
         }
-      }, 30000);
+      }, 10000); // Poll every 10 seconds during active draft
 
       return () => clearInterval(interval);
     }
-  }, [draft, loadDraftData]);
+  }, [draft?.status, loadDraftData]);
 
-  const handleStartDraft = async () => {
-    if (!draft) return;
-
+  // ========================================
+  // BUTTON 1: CREATE DRAFT
+  // ========================================
+  const handleCreateDraft = async () => {
     try {
-      setError(null);
-      const updatedDraft = await draftService.startDraft(draft.id);
-      setDraft(updatedDraft);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to start draft');
-    }
-  };
-
-  const handleRestartDraft = async () => {
-    if (!draft) return;
-
-    const confirmed = window.confirm(
-      'Are you sure you want to restart the draft?\n\n' +
-      'This will:\n' +
-      '• Reset all picks\n' +
-      '• Clear all team rosters\n' +
-      '• Randomize the draft order\n' +
-      '• Set draft status back to "not started"\n\n' +
-      'This action cannot be undone!'
-    );
-
-    if (!confirmed) return;
-
-    try {
-      setError(null);
       setLoading(true);
-      
-      const updatedDraft = await draftService.restartDraft(draft.id);
-      setDraft(updatedDraft);
-      
-      // Reload contestants and teams to reflect the reset
+      setError(null);
+
+      const newDraft = await draftService.createDraft({ leagueId });
+      setDraft(newDraft);
+
+      // Reload data to ensure consistency
       await loadDraftData();
-      
-      alert('Draft has been restarted! You can now start it again with the new team setup.');
-      
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to restart draft');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to create draft';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
+  // ========================================
+  // BUTTON 2: START DRAFT
+  // ========================================
+  const handleStartDraft = async () => {
+    if (!draft) {
+      setError('No draft found to start');
+      return;
+    }
+
+    if (!confirm('Start the draft now?\n\nThis will lock in all settings and begin the live draft. This cannot be undone.')) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      const startedDraft = await draftService.startDraft(draft.id);
+      setDraft(startedDraft);
+
+      // Reload data to ensure consistency
+      await loadDraftData();
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to start draft';
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ========================================
+  // DRAFT PICK HANDLING
+  // ========================================
   const handleContestantSelect = async (contestant: Contestant) => {
     if (!draft) {
       alert('No draft found. Please refresh the page.');
@@ -197,16 +197,15 @@ export default function DraftBoard({ leagueId, currentUserId, isCommissioner = f
     }
 
     if (!canMakePick()) {
-      alert('It\'s not your turn to pick or the draft is not active.');
+      alert('It&apos;s not your turn to pick or the draft is not active.');
       return;
     }
-    
-    // Show confirmation dialog
+
     const confirmed = window.confirm(
       `Are you sure you want to draft ${contestant.name}?\n\n` +
       `This will add them to your team and cannot be undone.`
     );
-    
+
     if (!confirmed) {
       return;
     }
@@ -232,99 +231,73 @@ export default function DraftBoard({ leagueId, currentUserId, isCommissioner = f
       const updatedContestants = await draftService.getAvailableContestants(leagueId, updatedDraft.id);
       setContestants(updatedContestants);
 
-      // Show success message
-      alert(`✅ Successfully drafted ${contestant.name} to your team!`);
-
       // Check if draft is complete
       if (updatedDraft.status === 'completed') {
         onDraftComplete?.(updatedDraft);
       }
 
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to make pick';
-      setError(errorMessage);
-      alert(`❌ Failed to draft ${contestant.name}: ${errorMessage}`);
+      setError(err instanceof Error ? err.message : 'Failed to make pick');
     } finally {
       setMakingPick(false);
     }
   };
 
+  // ========================================
+  // HELPER FUNCTIONS
+  // ========================================
+  const getCurrentUserTeam = (): Team | null => {
+    return teams.find(team => team.ownerId === currentUserId) || null;
+  };
+
   const canMakePick = (): boolean => {
-    if (!draft || draft.status !== 'in_progress' || makingPick) {
-      return false;
-    }
+    if (!draft || draft.status !== 'in_progress') return false;
+
+    const currentTeam = getCurrentUserTeam();
+    if (!currentTeam) return false;
 
     const currentTeamId = draftService.getCurrentTeamId(draft);
-    const currentUserTeam = getCurrentUserTeam();
-    
-    return currentUserTeam?.id === currentTeamId;
+    return currentTeamId === currentTeam.id;
   };
 
-  const getCurrentUserTeam = (): Team | undefined => {
-    return teams.find(team => team.ownerId === currentUserId);
-  };
-
-  const getCurrentTeamName = (): string => {
-    if (!draft) return '';
-    
-    const currentTeamId = draftService.getCurrentTeamId(draft);
-    const team = teams.find(t => t.id === currentTeamId);
+  const getTeamNameById = (teamId: string): string => {
+    const team = teams.find(t => t.id === teamId);
     return team?.name || 'Unknown Team';
   };
 
-  const getDraftedContestants = (): Map<string, string> => {
-    if (!draft) return new Map();
-    
-    const draftedMap = new Map<string, string>();
-    
-    draft.picks.forEach(pick => {
-      const team = teams.find(t => t.id === pick.teamId);
-      if (team) {
-        draftedMap.set(pick.contestantId, team.name);
-      }
-    });
-    
-    return draftedMap;
-  };
-
-  const getDraftStatus = () => {
-    if (!draft) return null;
-    return draftService.getDraftStatus(draft);
-  };
+  // ========================================
+  // RENDER STATES
+  // ========================================
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-96">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-rose-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading draft...</p>
-        </div>
+      <div className="flex items-center justify-center py-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <span className="ml-2 text-gray-600">Loading draft...</span>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-        <div className="flex items-center">
-          <svg className="w-6 h-6 text-red-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <div>
-            <h3 className="text-red-800 font-semibold">Error</h3>
-            <p className="text-red-700">{error}</p>
-          </div>
+      <div className="text-center py-12">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md mx-auto">
+          <h3 className="text-lg font-semibold text-red-800 mb-2">Error</h3>
+          <p className="text-red-600 mb-4">{error}</p>
+          <button
+            onClick={loadDraftData}
+            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+          >
+            Try Again
+          </button>
         </div>
-        <button
-          onClick={loadDraftData}
-          className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-        >
-          Try Again
-        </button>
       </div>
     );
   }
 
+  // ========================================
+  // STATE 1: NO DRAFT EXISTS
+  // ========================================
   if (!draft) {
     return (
       <div className="text-center py-12">
@@ -332,338 +305,275 @@ export default function DraftBoard({ leagueId, currentUserId, isCommissioner = f
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
         </svg>
         <h3 className="text-xl font-semibold text-gray-900 mb-2">No Draft Found</h3>
-        <p className="text-gray-600">A draft hasn&apos;t been created for this league yet.</p>
-      </div>
-    );
-  }
+        <p className="text-gray-600 mb-6">A draft hasn&apos;t been created for this league yet.</p>
 
-  const draftStatus = getDraftStatus();
-  const draftedContestants = getDraftedContestants();
-  const isUserTurn = canMakePick();
+        {isCommissioner ? (
+          <div className="space-y-4">
+            <button
+              onClick={handleCreateDraft}
+              disabled={loading}
+              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? 'Creating Draft...' : '📝 Create Draft'}
+            </button>
 
-  return (
-    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-      {/* Your Team Roster - Sidebar */}
-      <div className="lg:col-span-1">
-        {getCurrentUserTeam() ? (
-          <div className="sticky top-4">
-            <TeamRoster 
-              team={getCurrentUserTeam()!} 
-              draft={draft}
-              showDraftOrder={true}
-            />
+            <p className="text-sm text-gray-500">
+              This will create a draft and take you to the pre-draft lobby where you can configure settings.
+            </p>
           </div>
         ) : (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-            <div className="flex items-center">
-              <svg className="w-5 h-5 text-yellow-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-              </svg>
-              <div>
-                <p className="text-yellow-800 font-medium">No Team Found</p>
-                <p className="text-yellow-700 text-sm">You need to join a team to participate in the draft.</p>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Main Draft Content */}
-      <div className="lg:col-span-3 space-y-6">
-        {/* Draft Header */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Draft Board</h2>
-            <div className="flex flex-wrap gap-4 text-sm text-gray-600">
-              <span>Round {draftStatus?.currentRound || 1} of {draftStatus?.totalRounds || 5}</span>
-              <span>Pick {draft.currentPick} of {teams.length * 5}</span>
-              <span>{draftStatus?.picksRemaining || 0} picks remaining</span>
-            </div>
-          </div>
-
-          {/* Draft Timer */}
-          {draft.status === 'in_progress' && (
-            <DraftTimer
-              timeLimit={draft.settings.pickTimeLimit}
-              isActive={true}
-              currentTurnId={draftService.getCurrentTeamId(draft) || undefined}
-              onTimeExpired={() => {
-                // TODO: Implement auto-pick or skip logic
-              }}
-            />
-          )}
-        </div>
-
-        {/* Current Turn Indicator */}
-        {draft.status === 'in_progress' && (
-          <div className={`mt-4 p-4 rounded-lg ${
-            isUserTurn ? 'bg-blue-50 border-2 border-blue-300' : 'bg-gray-50'
-          }`}>
-            <div className="flex items-center">
-              {isUserTurn ? (
-                <>
-                  <svg className="w-6 h-6 text-blue-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                  </svg>
-                  <span className="text-blue-800 font-semibold text-lg">It&apos;s your turn to pick!</span>
-                </>
-              ) : (
-                <>
-                  <svg className="w-6 h-6 text-gray-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <span className="text-gray-700">
-                    Waiting for <strong>{getCurrentTeamName()}</strong> to pick...
-                  </span>
-                </>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Draft Controls - Commissioner Only */}
-        {isCommissioner && draft.status === 'not_started' && (
-          <div className="mt-4 flex space-x-3">
-            <button
-              onClick={handleStartDraft}
-              className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold"
-            >
-              Start Draft
-            </button>
-            <button
-              onClick={handleRestartDraft}
-              className="px-4 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-medium"
-            >
-              Restart Draft
-            </button>
-          </div>
-        )}
-
-        {isCommissioner && (draft.status === 'in_progress' || draft.status === 'completed') && (
-          <div className="mt-4">
-            <button
-              onClick={handleRestartDraft}
-              className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-medium"
-            >
-              Restart Draft
-            </button>
-          </div>
-        )}
-
-        {/* Non-Commissioner Message */}
-        {!isCommissioner && draft.status === 'not_started' && (
-          <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-md mx-auto">
             <div className="flex items-center">
               <svg className="w-5 h-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <span className="text-blue-800 font-medium">Waiting for commissioner to start the draft</span>
+              <span className="text-blue-800 font-medium">Waiting for commissioner to create the draft</span>
             </div>
           </div>
         )}
 
-        {draft.status === 'completed' && (
-          <div className="mt-4 p-4 bg-green-50 border-2 border-green-300 rounded-lg">
-            <div className="flex items-center">
-              <svg className="w-6 h-6 text-green-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span className="text-green-800 font-semibold text-lg">Draft Complete!</span>
-            </div>
+        {/* Debug Section */}
+        {isCommissioner && (
+          <div className="mt-8">
+            <button
+              onClick={() => setShowDebug(!showDebug)}
+              className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 mb-4"
+            >
+              {showDebug ? '🔧 Hide Debug' : '🔧 Show Debug'}
+            </button>
+
+            {showDebug && (
+              <DraftDebug leagueId={leagueId} />
+            )}
           </div>
         )}
       </div>
+    );
+  }
 
-      {/* Debug Information - Development Only */}
-      {process.env.NODE_ENV === 'development' && draft.status === 'in_progress' && (
-        <div className="bg-yellow-50 border-2 border-yellow-300 rounded-lg p-4 mb-4">
-          <h4 className="font-semibold text-yellow-800 mb-2">🔍 Draft Debug Info</h4>
-          <div className="text-sm text-yellow-700 space-y-2">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <div><strong>Current User ID:</strong> <code className="bg-yellow-100 px-1 rounded">{currentUserId}</code></div>
-                <div><strong>Current Pick:</strong> {draft.currentPick}</div>
-                <div><strong>Draft Status:</strong> {draft.status}</div>
-              </div>
-              <div>
-                <div><strong>Current Team Turn:</strong> <code className="bg-yellow-100 px-1 rounded">{draftService.getCurrentTeamId(draft)}</code></div>
-                <div><strong>Your Team ID:</strong> <code className="bg-yellow-100 px-1 rounded">{getCurrentUserTeam()?.id || 'None'}</code></div>
-                <div><strong>Can Make Pick:</strong> <span className={canMakePick() ? 'text-green-600 font-bold' : 'text-red-600 font-bold'}>{canMakePick() ? 'YES' : 'NO'}</span></div>
-              </div>
-            </div>
-            
-            <div><strong>Draft Order:</strong> <code className="bg-yellow-100 px-1 rounded">[{draft.draftOrder.join(', ')}]</code></div>
-            
-            <div><strong>All Teams:</strong></div>
-            <div className="bg-yellow-100 p-2 rounded text-xs">
-              {teams.map(team => (
-                <div key={team.id} className={`p-1 ${team.ownerId === currentUserId ? 'bg-green-200 font-bold' : ''}`}>
-                  <strong>{team.name}</strong> | ID: <code>{team.id}</code> | Owner: <code>{team.ownerId}</code>
-                  {team.ownerId === currentUserId && ' ← YOUR TEAM'}
-                  {team.id === draftService.getCurrentTeamId(draft) && ' ← CURRENT TURN'}
-                </div>
-              ))}
-            </div>
-            
+  // ========================================
+  // STATE 2: DRAFT CREATED (PRE-DRAFT LOBBY)
+  // ========================================
+  if (draft.status === 'not_started') {
+    return (
+      <div className="text-center py-12">
+        <svg className="w-16 h-16 text-blue-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <h3 className="text-xl font-semibold text-gray-900 mb-2">Draft Created - Pre-Draft Lobby</h3>
+        <p className="text-gray-600 mb-6">
+          The draft has been created and is ready to start. All league members can see this page and prepare.
+        </p>
+
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 max-w-md mx-auto mb-6">
+          <h4 className="font-semibold text-blue-900 mb-2">Draft Settings</h4>
+          <div className="text-sm text-blue-800 space-y-1">
+            <div>Format: {draft.settings.draftFormat === 'snake' ? 'Snake Draft' : 'Linear Draft'}</div>
+            <div>Pick Time Limit: {draft.settings.pickTimeLimit} seconds</div>
+            <div>Teams: {teams.length}</div>
+            <div>Total Picks: {teams.length * 5}</div>
+          </div>
+        </div>
+
+        {isCommissioner ? (
+          <div className="space-y-4">
             <button
-              onClick={() => {
-                console.log('Full Debug Info:', {
-                  currentUserId,
-                  draft,
-                  teams,
-                  getCurrentTeamId: draftService.getCurrentTeamId(draft),
-                  getCurrentUserTeam: getCurrentUserTeam()
-                });
-              }}
-              className="mt-2 px-3 py-1 bg-yellow-600 text-white rounded text-xs hover:bg-yellow-700"
+              onClick={handleStartDraft}
+              disabled={loading}
+              className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Log Full Debug to Console
+              {loading ? 'Starting Draft...' : '🚀 Start Draft'}
             </button>
-          </div>
-        </div>
-      )}
 
-      {/* How to Pick Instructions */}
-      {draft.status === 'in_progress' && (
-        <div className={`rounded-lg p-6 border-2 ${
-          isUserTurn 
-            ? 'bg-green-50 border-green-300' 
-            : 'bg-blue-50 border-blue-300'
-        }`}>
-          <div className="flex items-start space-x-4">
-            <div className={`flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center ${
-              isUserTurn ? 'bg-green-600' : 'bg-blue-600'
-            }`}>
-              {isUserTurn ? (
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-              ) : (
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              )}
-            </div>
-            <div className="flex-1">
-              <h3 className={`text-lg font-bold mb-2 ${
-                isUserTurn ? 'text-green-800' : 'text-blue-800'
-              }`}>
-                {isUserTurn ? '🎯 Your Turn to Pick!' : '⏳ Waiting for Your Turn'}
-              </h3>
-              <p className={`text-sm mb-3 ${
-                isUserTurn ? 'text-green-700' : 'text-blue-700'
-              }`}>
-                {isUserTurn 
-                  ? 'Look for contestants with green borders and "CLICK TO DRAFT" labels. Click on any available contestant to draft them to your team.'
-                  : `It's currently ${getCurrentTeamName()}'s turn to pick. Available contestants will be highlighted when it's your turn.`
-                }
-              </p>
-              {isUserTurn && (
-                <div className="flex items-center space-x-4 text-sm">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-4 h-4 bg-green-400 border-2 border-green-600 border-dashed rounded"></div>
-                    <span className="text-green-700">Available to draft</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-4 h-4 bg-gray-400 rounded"></div>
-                    <span className="text-gray-600">Already drafted</span>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Contestants Grid */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-semibold text-gray-900">
-            Available Contestants ({contestants.length})
-          </h3>
-          <button
-            onClick={loadDraftData}
-            disabled={loading}
-            className="inline-flex items-center px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-          >
-            <svg className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-            {loading ? 'Refreshing...' : 'Refresh'}
-          </button>
-        </div>
-        
-        {/* Debug Tools - Development Only */}
-        {process.env.NODE_ENV === 'development' && (
-          <div className="mb-4 p-4 bg-yellow-100 border border-yellow-300 rounded">
-            <h4 className="font-bold text-yellow-800 mb-2">🔧 Debug Tools</h4>
-            <div className="flex space-x-2">
-              <button
-                onClick={loadDraftData}
-                className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
-              >
-                Refresh Draft Data
-              </button>
-              <button
-                onClick={async () => {
-                  try {
-                    const drafts = await draftService.listDraftsByLeague(leagueId);
-                    console.log('All drafts for this league:', drafts);
-                    alert(`Found ${drafts.length} drafts. Check console for details.`);
-                  } catch (err) {
-                    console.error('Error listing drafts:', err);
-                  }
-                }}
-                className="px-3 py-1 bg-purple-600 text-white rounded hover:bg-purple-700 text-sm"
-              >
-                List All Drafts
-              </button>
-              {contestants.length > 0 && (
-                <button
-                  onClick={() => handleContestantSelect(contestants[0])}
-                  className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-sm"
-                >
-                  Test Draft {contestants[0]?.name}
-                </button>
-              )}
-            </div>
-            <p className="text-xs text-yellow-700 mt-1">
-              Current Draft ID: <code className="bg-yellow-200 px-1 rounded">{draft?.id}</code>
+            <p className="text-sm text-gray-500">
+              This will randomize the draft order and begin the live draft. This cannot be undone.
             </p>
           </div>
+        ) : (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4 max-w-md mx-auto">
+            <div className="flex items-center">
+              <svg className="w-5 h-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span className="text-green-800 font-medium">Ready to draft! Waiting for commissioner to start.</span>
+            </div>
+          </div>
         )}
 
-        {contestants.length === 0 ? (
-          <div className="text-center py-12">
-            <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-            </svg>
-            <p className="text-gray-600">No contestants available</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {contestants.map((contestant) => {
-              const isDrafted = draftedContestants.has(contestant.id);
-              const draftedByTeam = draftedContestants.get(contestant.id);
-              
-              const isSelectable = canMakePick() && !makingPick;
-              
-              return (
-                <DraftContestantCard
-                  key={contestant.id}
-                  contestant={contestant}
-                  onSelect={handleContestantSelect}
-                  isSelectable={isSelectable}
-                  isDrafted={isDrafted}
-                  draftedByTeam={draftedByTeam}
-                />
-              );
-            })}
+        {/* Debug Section */}
+        {isCommissioner && (
+          <div className="mt-8">
+            <button
+              onClick={() => setShowDebug(!showDebug)}
+              className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 mb-4"
+            >
+              {showDebug ? '🔧 Hide Debug' : '🔧 Show Debug'}
+            </button>
+
+            {showDebug && (
+              <DraftDebug leagueId={leagueId} />
+            )}
           </div>
         )}
-        </div>
       </div>
+    );
+  }
+
+  // ========================================
+  // STATE 3: DRAFT IN PROGRESS (LIVE DRAFTING)
+  // ========================================
+  if (draft.status === 'in_progress') {
+    const currentTeamId = draftService.getCurrentTeamId(draft);
+    const currentTeam = teams.find(t => t.id === currentTeamId);
+    const isMyTurn = canMakePick();
+    const draftStatus = draftService.getDraftStatus(draft);
+
+    return (
+      <div className="space-y-6">
+        {/* Draft Header */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-bold text-gray-900">Live Draft</h2>
+            <div className="text-sm text-gray-600">
+              Pick {draft.currentPick} of {teams.length * 5}
+            </div>
+          </div>
+
+          {/* Current Turn Info */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className={`px-4 py-2 rounded-lg ${isMyTurn ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                {isMyTurn ? '🎯 Your Turn!' : `${currentTeam?.name || 'Unknown Team'}'s Turn`}
+              </div>
+              <div className="text-sm text-gray-600">
+                Round {draftStatus.currentRound} of {draftStatus.totalRounds}
+              </div>
+            </div>
+
+            {/* Draft Timer */}
+            <DraftTimer
+              timeLimit={draft.settings.pickTimeLimit}
+              isActive={draft.status === 'in_progress'}
+              currentTurnId={currentTeamId || undefined}
+              onTimeExpired={() => {
+                // Handle auto-pick or time expiration
+                console.log('Time expired for pick');
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Team Rosters */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {teams.map((team) => (
+            <TeamRoster
+              key={team.id}
+              team={team}
+              draft={draft}
+              showDraftOrder={true}
+            />
+          ))}
+        </div>
+
+        {/* Available Contestants */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            Available Contestants ({contestants.length})
+          </h3>
+
+          {contestants.length === 0 ? (
+            <p className="text-gray-500 text-center py-8">No contestants available</p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {contestants.map((contestant) => {
+                const isDrafted = draft.picks.some(pick => pick.contestantId === contestant.id);
+                const draftedByTeam = isDrafted
+                  ? getTeamNameById(draft.picks.find(pick => pick.contestantId === contestant.id)?.teamId || '')
+                  : undefined;
+
+                return (
+                  <DraftContestantCard
+                    key={contestant.id}
+                    contestant={contestant}
+                    onSelect={handleContestantSelect}
+                    isSelectable={isMyTurn && !makingPick}
+                    isDrafted={isDrafted}
+                    draftedByTeam={draftedByTeam}
+                  />
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Debug Section */}
+        {isCommissioner && (
+          <div className="mt-8">
+            <button
+              onClick={() => setShowDebug(!showDebug)}
+              className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 mb-4"
+            >
+              {showDebug ? '🔧 Hide Debug' : '🔧 Show Debug'}
+            </button>
+
+            {showDebug && (
+              <DraftDebug leagueId={leagueId} />
+            )}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ========================================
+  // STATE 4: DRAFT COMPLETED
+  // ========================================
+  if (draft.status === 'completed') {
+    return (
+      <div className="text-center py-12">
+        <svg className="w-16 h-16 text-green-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <h3 className="text-xl font-semibold text-gray-900 mb-2">Draft Complete!</h3>
+        <p className="text-gray-600 mb-6">
+          The draft has finished. All teams have selected their contestants.
+        </p>
+
+        {/* Team Rosters */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
+          {teams.map((team) => (
+            <TeamRoster
+              key={team.id}
+              team={team}
+              draft={draft}
+              showDraftOrder={false}
+            />
+          ))}
+        </div>
+
+        {/* Debug Section */}
+        {isCommissioner && (
+          <div className="mt-8">
+            <button
+              onClick={() => setShowDebug(!showDebug)}
+              className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 mb-4"
+            >
+              {showDebug ? '🔧 Hide Debug' : '🔧 Show Debug'}
+            </button>
+
+            {showDebug && (
+              <DraftDebug leagueId={leagueId} />
+            )}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Fallback
+  return (
+    <div className="text-center py-12">
+      <p className="text-gray-500">Unknown draft state: {draft.status}</p>
     </div>
   );
 }

@@ -9,7 +9,7 @@ import { getCurrentUserDetails } from '../lib/auth-utils';
  */
 export function useUserSetup() {
   useEffect(() => {
-    const hubListener = (data: any) => {
+    const hubListener = (data: { payload: { event: string } }) => {
       const { payload } = data;
       
       if (payload.event === 'signedIn') {

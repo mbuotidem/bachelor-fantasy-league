@@ -14,7 +14,7 @@ export type { JoinLeagueInput, UpdateLeagueSettingsInput } from './league-servic
 export type { UpdateTeamInput, AddContestantToTeamInput } from './team-service';
 export type { UpdateContestantInput, EliminateContestantInput } from './contestant-service';
 export type { UndoScoringInput, GetEpisodeScoresInput } from './scoring-service';
-export type { CreateDraftInput, MakePickInput, DraftUpdate } from './draft-service';
+export type { CreateDraftInput, MakePickInput } from './draft-service';
 export type { CreateUserInput, UpdateUserInput } from './user-service';
 
 // Import service classes

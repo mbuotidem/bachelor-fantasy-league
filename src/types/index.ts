@@ -104,7 +104,7 @@ export interface Draft {
   updatedAt: string
 }
 
-export type DraftStatus = 'not_started' | 'in_progress' | 'completed' | 'paused'
+export type DraftStatus = 'not_started' | 'in_progress' | 'completed'
 
 export interface DraftPick {
   pickNumber: number

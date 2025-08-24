@@ -425,7 +425,7 @@ export default function TeamRoster({
           <h4 className="text-lg font-semibold text-gray-900 mb-2">No Contestants Drafted</h4>
           <p className="text-gray-600">
             {draft?.status === 'not_started' 
-              ? 'The draft hasn\'t started yet.'
+              ? 'The draft is ready but hasn&apos;t started yet.'
               : draft?.status === 'in_progress'
                 ? 'Start drafting contestants to build your team!'
                 : 'This team didn\'t draft any contestants.'

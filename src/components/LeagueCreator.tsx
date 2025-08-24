@@ -75,7 +75,7 @@ export default function LeagueCreator({ onLeagueCreated, onCancel }: LeagueCreat
 
     // Validate team name if creating a team
     if (createTeam && !teamName.trim()) {
-      setErrors([{ field: 'teamName', message: 'Team name is required when creating a team' }]);
+      setErrors([{ field: 'teamName', message: 'Team name is required when creating a team', code: 'REQUIRED' }]);
       setIsSubmitting(false);
       return;
     }
