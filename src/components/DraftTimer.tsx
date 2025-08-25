@@ -9,6 +9,8 @@ interface DraftTimerProps {
   currentTurnStartedAt?: string; // ISO timestamp when current turn started
   onTimeExpired?: () => void;
   className?: string;
+  isMyTurn?: boolean; // Whether it's the current user's turn
+  currentTeamName?: string; // Name of the team whose turn it is
 }
 
 export default function DraftTimer({
@@ -18,6 +20,8 @@ export default function DraftTimer({
   currentTurnStartedAt,
   onTimeExpired,
   className = '',
+  isMyTurn = false,
+  currentTeamName,
 }: DraftTimerProps) {
   const [timeRemaining, setTimeRemaining] = useState(timeLimit);
   const [lastTurnId, setLastTurnId] = useState<string | undefined>(currentTurnId);
@@ -127,7 +131,11 @@ export default function DraftTimer({
 
         {/* Status text */}
         <div className="mt-2 text-sm font-medium">
-          {timeRemaining > 0 ? 'Time to Pick' : 'Time Expired!'}
+          {timeRemaining > 0 ? (
+            isMyTurn ? 'Your Turn - Pick Now!' : `${currentTeamName || 'Team'} is Picking`
+          ) : (
+            isMyTurn ? 'Your Time Expired!' : `${currentTeamName || 'Team'}'s Time Expired`
+          )}
         </div>
       </div>
 
@@ -135,7 +143,11 @@ export default function DraftTimer({
       {timeRemaining <= 10 && timeRemaining > 0 && (
         <div className="mt-2 animate-pulse">
           <span className="text-red-600 font-semibold text-sm">
-            ⚠️ Hurry up! Only {timeRemaining} seconds left!
+            {isMyTurn ? (
+              `⚠️ Hurry up! Only ${timeRemaining} seconds left!`
+            ) : (
+              `⏰ ${currentTeamName || 'Team'} has ${timeRemaining} seconds left`
+            )}
           </span>
         </div>
       )}

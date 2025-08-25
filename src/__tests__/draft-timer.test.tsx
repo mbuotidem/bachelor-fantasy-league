@@ -1,12 +1,9 @@
 import { render, screen, act } from '@testing-library/react';
 import DraftTimer from '../components/DraftTimer';
 
-// Mock timers
-jest.useFakeTimers();
-
 describe('DraftTimer', () => {
   beforeEach(() => {
-    jest.clearAllTimers();
+    jest.useFakeTimers();
   });
 
   afterEach(() => {
@@ -35,7 +32,7 @@ describe('DraftTimer', () => {
     );
 
     expect(screen.getByText('2:00')).toBeInTheDocument();
-    expect(screen.getByText('Time to Pick')).toBeInTheDocument();
+    expect(screen.getByText('Team is Picking')).toBeInTheDocument();
   });
 
   it('should countdown properly', () => {
@@ -49,7 +46,7 @@ describe('DraftTimer', () => {
 
     // Initial time should be displayed
     expect(screen.getByText('2:00')).toBeInTheDocument();
-    expect(screen.getByText('Time to Pick')).toBeInTheDocument();
+    expect(screen.getByText('Team is Picking')).toBeInTheDocument();
   });
 
   it('should reset timer when turn changes', () => {
@@ -90,7 +87,7 @@ describe('DraftTimer', () => {
 
     // Timer should render with callback provided
     expect(screen.getByText('0:05')).toBeInTheDocument();
-    expect(screen.getByText('Time to Pick')).toBeInTheDocument();
+    expect(screen.getByText('Team is Picking')).toBeInTheDocument();
   });
 
   it('should show initial time correctly', () => {
@@ -104,7 +101,7 @@ describe('DraftTimer', () => {
 
     // Should show initial time for low time limit
     expect(screen.getByText('0:10')).toBeInTheDocument();
-    expect(screen.getByText('Time to Pick')).toBeInTheDocument();
+    expect(screen.getByText('Team is Picking')).toBeInTheDocument();
   });
 
   it('should apply correct initial color classes', () => {

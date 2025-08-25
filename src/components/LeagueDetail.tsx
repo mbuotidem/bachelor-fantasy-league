@@ -11,6 +11,7 @@ import StandingsDashboard from './StandingsDashboard';
 import CommissionerTeamCreator from './CommissionerTeamCreator';
 import { draftService, teamService } from '../services';
 import type { League, Draft, Team } from '../types';
+import { useDataRefresh } from '../contexts/DataRefreshContext';
 
 interface LeagueDetailProps {
   league: League;
@@ -31,6 +32,7 @@ export default function LeagueDetail({ league, isCommissioner, initialTab = 'con
   const [currentUserId, setCurrentUserId] = useState<string>('');
   const [teams, setTeams] = useState<Team[]>([]);
   const [showTeamCreator, setShowTeamCreator] = useState(false);
+  const { registerDraftDataRefresh, unregisterDraftDataRefresh } = useDataRefresh();
 
   useEffect(() => {
     loadDraftData();
@@ -45,7 +47,7 @@ export default function LeagueDetail({ league, isCommissioner, initialTab = 'con
     const interval = setInterval(() => {
       loadDraftData();
       loadTeams();
-    }, 10000); // Check every 10 seconds
+    }, 30000); // Check every 30 seconds as backup (real-time updates handle most cases)
 
     return () => clearInterval(interval);
   }, [draft?.status]);
@@ -68,6 +70,14 @@ export default function LeagueDetail({ league, isCommissioner, initialTab = 'con
       console.error('Error loading current user:', error);
     }
   };
+
+  // Register this component's refresh function with the global context
+  useEffect(() => {
+    registerDraftDataRefresh(loadDraftData);
+    return () => {
+      unregisterDraftDataRefresh(loadDraftData);
+    };
+  }, [registerDraftDataRefresh, unregisterDraftDataRefresh]);
 
   const loadTeams = async () => {
     try {

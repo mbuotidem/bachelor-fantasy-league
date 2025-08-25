@@ -97,6 +97,7 @@ export interface Draft {
   leagueId: string
   status: DraftStatus
   currentPick: number
+  currentTurnStartedAt?: string // ISO timestamp when current turn started (for timer persistence)
   draftOrder: string[]
   picks: DraftPick[]
   settings: DraftSettings

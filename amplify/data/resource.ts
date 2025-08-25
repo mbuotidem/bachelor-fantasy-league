@@ -90,6 +90,7 @@ const schema = a.schema({
       leagueId: a.id().required(),
       status: a.enum(['not_started', 'in_progress', 'completed', 'paused']),
       currentPick: a.integer().default(0),
+      currentTurnStartedAt: a.datetime(), // Track when current turn started for timer persistence
       draftOrder: a.string().array(),
       picks: a.json(),
       settings: a.json(),
@@ -134,6 +135,21 @@ const schema = a.schema({
     })
     .authorization((allow) => [
       allow.authenticated().to(['read', 'create', 'update', 'delete'])
+    ]),
+
+  // Real-time notification model for cross-user notifications
+  Notification: a
+    .model({
+      leagueId: a.id().required(),
+      type: a.enum(['draft_started', 'draft_turn', 'draft_pick_made', 'draft_completed', 'draft_deleted', 'scoring_event', 'standings_update', 'league_update', 'episode_started', 'episode_ended']),
+      title: a.string().required(),
+      message: a.string(),
+      data: a.json(),
+      targetUserId: a.id(), // Optional - if specified, only for this user
+      expiresAt: a.datetime(), // Auto-cleanup old notifications
+    })
+    .authorization((allow) => [
+      allow.authenticated().to(['read', 'create', 'delete'])
     ]),
 
 
