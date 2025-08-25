@@ -2,19 +2,7 @@ import { notificationService } from '../services/notification-service';
 import type { ToastNotification } from '../components/NotificationToast';
 import type { NotificationEvent } from '../services/notification-service';
 
-// Mock localStorage
-const localStorageMock = {
-  getItem: jest.fn(),
-  setItem: jest.fn(),
-  removeItem: jest.fn(),
-  clear: jest.fn(),
-  key: jest.fn(),
-  length: 0,
-};
 
-Object.defineProperty(window, 'localStorage', {
-  value: localStorageMock,
-});
 
 // Mock crypto.randomUUID
 Object.defineProperty(global, 'crypto', {
@@ -26,9 +14,6 @@ Object.defineProperty(global, 'crypto', {
 describe('NotificationService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    localStorageMock.getItem.mockClear();
-    localStorageMock.setItem.mockClear();
-    localStorageMock.removeItem.mockClear();
   });
 
   describe('Notification Subscriptions', () => {
@@ -257,48 +242,9 @@ describe('NotificationService', () => {
     });
   });
 
-  describe('Cross-tab Communication', () => {
-    it('should store notifications in localStorage for cross-tab communication', () => {
-      notificationService.showNotification({
-        type: 'info',
-        title: 'Test Notification',
-      });
 
-      expect(localStorageMock.setItem).toHaveBeenCalledWith(
-        expect.stringMatching(/^notification-/),
-        expect.stringContaining('"type":"notification"')
-      );
-    });
-
-    it('should store events in localStorage for cross-tab communication', () => {
-      notificationService.emitEvent({
-        type: 'draft_started',
-        leagueId: 'league-123',
-        data: { leagueName: 'Test League' },
-      });
-
-      expect(localStorageMock.setItem).toHaveBeenCalledWith(
-        expect.stringMatching(/^notification-/),
-        expect.stringContaining('"type":"event"')
-      );
-    });
-  });
 
   describe('Error Handling', () => {
-    it('should handle localStorage errors gracefully', () => {
-      localStorageMock.setItem.mockImplementation(() => {
-        throw new Error('Storage quota exceeded');
-      });
-
-      // Should not throw
-      expect(() => {
-        notificationService.showNotification({
-          type: 'info',
-          title: 'Test',
-        });
-      }).not.toThrow();
-    });
-
     it('should handle callback errors gracefully', () => {
       const errorCallback = jest.fn(() => {
         throw new Error('Callback error');

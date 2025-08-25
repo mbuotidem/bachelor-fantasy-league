@@ -209,6 +209,7 @@ describe('DraftService', () => {
           id: 'draft-123',
           status: 'in_progress',
           currentPick: 1,
+          currentTurnStartedAt: expect.any(String),
           draftOrder: expect.any(Array),
         });
       });

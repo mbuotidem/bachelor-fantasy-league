@@ -1,15 +1,15 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, act } from '@testing-library/react';
 import { RealTimeUpdateFeed } from '../components/RealTimeUpdateFeed';
-import { useNotificationEvents } from '../hooks/useNotifications';
-import type { NotificationEvent } from '../services/notification-service';
+import { useRealTimeNotificationEvents } from '../hooks/useRealTimeNotifications';
+import type { NotificationEvent } from '../services/real-time-notification-service';
 
-// Mock the useNotificationEvents hook
-jest.mock('../hooks/useNotifications', () => ({
-  useNotificationEvents: jest.fn(),
+// Mock the useRealTimeNotificationEvents hook
+jest.mock('../hooks/useRealTimeNotifications', () => ({
+  useRealTimeNotificationEvents: jest.fn(),
 }));
 
-const mockUseNotificationEvents = useNotificationEvents as jest.MockedFunction<typeof useNotificationEvents>;
+const mockUseRealTimeNotificationEvents = useRealTimeNotificationEvents as jest.MockedFunction<typeof useRealTimeNotificationEvents>;
 
 describe('RealTimeUpdateFeed', () => {
   beforeEach(() => {
@@ -17,7 +17,7 @@ describe('RealTimeUpdateFeed', () => {
   });
 
   it('should render empty state when no updates', () => {
-    mockUseNotificationEvents.mockReturnValue(null);
+    mockUseRealTimeNotificationEvents.mockReturnValue(null);
 
     render(<RealTimeUpdateFeed leagueId="league-123" />);
 
@@ -26,10 +26,10 @@ describe('RealTimeUpdateFeed', () => {
   });
 
   it('should render live updates header when there are updates', () => {
-    let eventCallback: (event: NotificationEvent) => void;
+    let eventCallback: ((event: NotificationEvent) => void) | undefined;
     
-    mockUseNotificationEvents.mockImplementation((leagueId, callback) => {
-      eventCallback = callback!;
+    mockUseRealTimeNotificationEvents.mockImplementation((leagueId, callback) => {
+      eventCallback = callback;
       return null;
     });
 
@@ -43,17 +43,21 @@ describe('RealTimeUpdateFeed', () => {
       timestamp: '2024-01-01T00:00:00.000Z',
     };
 
-    eventCallback!(testEvent);
+    act(() => {
+      if (eventCallback) {
+        eventCallback(testEvent);
+      }
+    });
     rerender(<RealTimeUpdateFeed leagueId="league-123" />);
 
     expect(screen.getByText('Live Updates')).toBeInTheDocument();
   });
 
   it('should display draft started event', () => {
-    let eventCallback: (event: NotificationEvent) => void;
+    let eventCallback: ((event: NotificationEvent) => void) | undefined;
     
-    mockUseNotificationEvents.mockImplementation((leagueId, callback) => {
-      eventCallback = callback!;
+    mockUseRealTimeNotificationEvents.mockImplementation((leagueId, callback) => {
+      eventCallback = callback;
       return null;
     });
 
@@ -66,7 +70,11 @@ describe('RealTimeUpdateFeed', () => {
       timestamp: '2024-01-01T00:00:00.000Z',
     };
 
-    eventCallback!(testEvent);
+    act(() => {
+      if (eventCallback) {
+        eventCallback(testEvent);
+      }
+    });
     rerender(<RealTimeUpdateFeed leagueId="league-123" />);
 
     expect(screen.getByText('Draft Started')).toBeInTheDocument();
@@ -74,10 +82,10 @@ describe('RealTimeUpdateFeed', () => {
   });
 
   it('should display draft pick made event', () => {
-    let eventCallback: (event: NotificationEvent) => void;
+    let eventCallback: ((event: NotificationEvent) => void) | undefined;
     
-    mockUseNotificationEvents.mockImplementation((leagueId, callback) => {
-      eventCallback = callback!;
+    mockUseRealTimeNotificationEvents.mockImplementation((leagueId, callback) => {
+      eventCallback = callback;
       return null;
     });
 
@@ -90,7 +98,11 @@ describe('RealTimeUpdateFeed', () => {
       timestamp: '2024-01-01T00:00:00.000Z',
     };
 
-    eventCallback!(testEvent);
+    act(() => {
+      if (eventCallback) {
+        eventCallback(testEvent);
+      }
+    });
     rerender(<RealTimeUpdateFeed leagueId="league-123" />);
 
     expect(screen.getByText('Draft Pick')).toBeInTheDocument();
@@ -98,10 +110,10 @@ describe('RealTimeUpdateFeed', () => {
   });
 
   it('should display draft completed event', () => {
-    let eventCallback: (event: NotificationEvent) => void;
+    let eventCallback: ((event: NotificationEvent) => void) | undefined;
     
-    mockUseNotificationEvents.mockImplementation((leagueId, callback) => {
-      eventCallback = callback!;
+    mockUseRealTimeNotificationEvents.mockImplementation((leagueId, callback) => {
+      eventCallback = callback;
       return null;
     });
 
@@ -114,7 +126,11 @@ describe('RealTimeUpdateFeed', () => {
       timestamp: '2024-01-01T00:00:00.000Z',
     };
 
-    eventCallback!(testEvent);
+    act(() => {
+      if (eventCallback) {
+        eventCallback(testEvent);
+      }
+    });
     rerender(<RealTimeUpdateFeed leagueId="league-123" />);
 
     expect(screen.getByText('Draft Complete')).toBeInTheDocument();
@@ -122,10 +138,10 @@ describe('RealTimeUpdateFeed', () => {
   });
 
   it('should display positive scoring event', () => {
-    let eventCallback: (event: NotificationEvent) => void;
+    let eventCallback: ((event: NotificationEvent) => void) | undefined;
     
-    mockUseNotificationEvents.mockImplementation((leagueId, callback) => {
-      eventCallback = callback!;
+    mockUseRealTimeNotificationEvents.mockImplementation((leagueId, callback) => {
+      eventCallback = callback;
       return null;
     });
 
@@ -138,7 +154,11 @@ describe('RealTimeUpdateFeed', () => {
       timestamp: '2024-01-01T00:00:00.000Z',
     };
 
-    eventCallback!(testEvent);
+    act(() => {
+      if (eventCallback) {
+        eventCallback(testEvent);
+      }
+    });
     rerender(<RealTimeUpdateFeed leagueId="league-123" />);
 
     expect(screen.getByText('Jane Doe scored 5 points')).toBeInTheDocument();
@@ -146,10 +166,10 @@ describe('RealTimeUpdateFeed', () => {
   });
 
   it('should display negative scoring event', () => {
-    let eventCallback: (event: NotificationEvent) => void;
+    let eventCallback: ((event: NotificationEvent) => void) | undefined;
     
-    mockUseNotificationEvents.mockImplementation((leagueId, callback) => {
-      eventCallback = callback!;
+    mockUseRealTimeNotificationEvents.mockImplementation((leagueId, callback) => {
+      eventCallback = callback;
       return null;
     });
 
@@ -162,7 +182,11 @@ describe('RealTimeUpdateFeed', () => {
       timestamp: '2024-01-01T00:00:00.000Z',
     };
 
-    eventCallback!(testEvent);
+    act(() => {
+      if (eventCallback) {
+        eventCallback(testEvent);
+      }
+    });
     rerender(<RealTimeUpdateFeed leagueId="league-123" />);
 
     expect(screen.getByText('Jane Doe lost 2 points')).toBeInTheDocument();
@@ -170,10 +194,10 @@ describe('RealTimeUpdateFeed', () => {
   });
 
   it('should display standings update event', () => {
-    let eventCallback: (event: NotificationEvent) => void;
+    let eventCallback: ((event: NotificationEvent) => void) | undefined;
     
-    mockUseNotificationEvents.mockImplementation((leagueId, callback) => {
-      eventCallback = callback!;
+    mockUseRealTimeNotificationEvents.mockImplementation((leagueId, callback) => {
+      eventCallback = callback;
       return null;
     });
 
@@ -188,7 +212,11 @@ describe('RealTimeUpdateFeed', () => {
       timestamp: '2024-01-01T00:00:00.000Z',
     };
 
-    eventCallback!(testEvent);
+    act(() => {
+      if (eventCallback) {
+        eventCallback(testEvent);
+      }
+    });
     rerender(<RealTimeUpdateFeed leagueId="league-123" />);
 
     expect(screen.getByText('Standings Update')).toBeInTheDocument();
@@ -196,10 +224,10 @@ describe('RealTimeUpdateFeed', () => {
   });
 
   it('should display episode started event', () => {
-    let eventCallback: (event: NotificationEvent) => void;
+    let eventCallback: ((event: NotificationEvent) => void) | undefined;
     
-    mockUseNotificationEvents.mockImplementation((leagueId, callback) => {
-      eventCallback = callback!;
+    mockUseRealTimeNotificationEvents.mockImplementation((leagueId, callback) => {
+      eventCallback = callback;
       return null;
     });
 
@@ -212,7 +240,11 @@ describe('RealTimeUpdateFeed', () => {
       timestamp: '2024-01-01T00:00:00.000Z',
     };
 
-    eventCallback!(testEvent);
+    act(() => {
+      if (eventCallback) {
+        eventCallback(testEvent);
+      }
+    });
     rerender(<RealTimeUpdateFeed leagueId="league-123" />);
 
     expect(screen.getByText('Episode Scoring Active')).toBeInTheDocument();
@@ -220,10 +252,10 @@ describe('RealTimeUpdateFeed', () => {
   });
 
   it('should limit updates to maxItems', () => {
-    let eventCallback: (event: NotificationEvent) => void;
+    let eventCallback: ((event: NotificationEvent) => void) | undefined;
     
-    mockUseNotificationEvents.mockImplementation((leagueId, callback) => {
-      eventCallback = callback!;
+    mockUseRealTimeNotificationEvents.mockImplementation((leagueId, callback) => {
+      eventCallback = callback;
       return null;
     });
 
@@ -237,10 +269,14 @@ describe('RealTimeUpdateFeed', () => {
     ];
 
     events.forEach((eventData, index) => {
-      eventCallback!({
-        ...eventData,
-        leagueId: 'league-123',
-        timestamp: `2024-01-01T00:0${index}:00.000Z`,
+      act(() => {
+        if (eventCallback) {
+          eventCallback({
+            ...eventData,
+            leagueId: 'league-123',
+            timestamp: `2024-01-01T00:0${index}:00.000Z`,
+          });
+        }
       });
       rerender(<RealTimeUpdateFeed leagueId="league-123" maxItems={2} />);
     });
@@ -252,10 +288,10 @@ describe('RealTimeUpdateFeed', () => {
   });
 
   it('should show timestamps when showTimestamps is true', () => {
-    let eventCallback: (event: NotificationEvent) => void;
+    let eventCallback: ((event: NotificationEvent) => void) | undefined;
     
-    mockUseNotificationEvents.mockImplementation((leagueId, callback) => {
-      eventCallback = callback!;
+    mockUseRealTimeNotificationEvents.mockImplementation((leagueId, callback) => {
+      eventCallback = callback;
       return null;
     });
 
@@ -268,17 +304,21 @@ describe('RealTimeUpdateFeed', () => {
       timestamp: new Date().toISOString(),
     };
 
-    eventCallback!(testEvent);
+    act(() => {
+      if (eventCallback) {
+        eventCallback(testEvent);
+      }
+    });
     rerender(<RealTimeUpdateFeed leagueId="league-123" showTimestamps={true} />);
 
     expect(screen.getByText('Just now')).toBeInTheDocument();
   });
 
   it('should hide timestamps when showTimestamps is false', () => {
-    let eventCallback: (event: NotificationEvent) => void;
+    let eventCallback: ((event: NotificationEvent) => void) | undefined;
     
-    mockUseNotificationEvents.mockImplementation((leagueId, callback) => {
-      eventCallback = callback!;
+    mockUseRealTimeNotificationEvents.mockImplementation((leagueId, callback) => {
+      eventCallback = callback;
       return null;
     });
 
@@ -291,14 +331,18 @@ describe('RealTimeUpdateFeed', () => {
       timestamp: new Date().toISOString(),
     };
 
-    eventCallback!(testEvent);
+    act(() => {
+      if (eventCallback) {
+        eventCallback(testEvent);
+      }
+    });
     rerender(<RealTimeUpdateFeed leagueId="league-123" showTimestamps={false} />);
 
     expect(screen.queryByText('Just now')).not.toBeInTheDocument();
   });
 
   it('should apply custom className', () => {
-    mockUseNotificationEvents.mockReturnValue(null);
+    mockUseRealTimeNotificationEvents.mockReturnValue(null);
 
     const { container } = render(
       <RealTimeUpdateFeed leagueId="league-123" className="custom-class" />

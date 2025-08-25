@@ -19,21 +19,22 @@ jest.mock('../lib/api-client', () => ({
   },
 }));
 
-// Mock the notification service
-jest.mock('../services/notification-service', () => ({
-  notificationService: {
+// Mock the real-time notification service
+jest.mock('../services/real-time-notification-service', () => ({
+  realTimeNotificationService: {
     notifyDraftStarted: jest.fn(),
     notifyDraftPickMade: jest.fn(),
     notifyDraftTurn: jest.fn(),
+    notifyDraftTurnSkipped: jest.fn(),
     notifyDraftCompleted: jest.fn(),
   },
 }));
 
 // Import after mocking
 import { DraftService } from '../services/draft-service';
-import { notificationService } from '../services/notification-service';
+import { realTimeNotificationService } from '../services/real-time-notification-service';
 
-const mockNotificationService = notificationService as jest.Mocked<typeof notificationService>;
+const mockNotificationService = realTimeNotificationService as jest.Mocked<typeof realTimeNotificationService>;
 
 describe('Draft Notification Integration', () => {
   let draftService: DraftService;
