@@ -1,6 +1,7 @@
 import { BaseService, ValidationError, NotFoundError } from './base-service';
 import type { Schema } from '../lib/api-client';
 import type { Draft, DraftPick, DraftSettings, DraftStatus, Contestant } from '../types';
+import { realTimeNotificationService } from './real-time-notification-service';
 
 // Type definitions for GraphQL operations
 type DraftModel = Schema['Draft']['type'];
@@ -101,6 +102,7 @@ export class DraftService extends BaseService {
       id: draftId,
       status: 'in_progress',
       currentPick: 1,
+      currentTurnStartedAt: new Date().toISOString(), // Set when first turn starts
       draftOrder,
     };
 
@@ -111,8 +113,102 @@ export class DraftService extends BaseService {
         throw new NotFoundError('Draft', draftId);
       }
 
+      const updatedDraft = this.transformDraftModel(response.data);
+
+      // Get league name for notification
+      try {
+        const leagueResponse = await this.client.models.League.get({ id: draft.leagueId });
+        const leagueName = leagueResponse.data?.name || 'Unknown League';
+        
+        // Notify all users that the draft has started (real-time GraphQL)
+        await realTimeNotificationService.notifyDraftStarted(draft.leagueId, leagueName);
+      } catch (error) {
+        console.warn('Failed to send draft started notification:', error);
+      }
+
+      return updatedDraft;
+    });
+  }
+
+  /**
+   * Auto-advance to next team when timer expires (skip current team's turn)
+   */
+  async autoAdvanceDraft(draftId: string): Promise<Draft> {
+    if (!draftId) {
+      throw new ValidationError('Draft ID is required');
+    }
+
+    const draft = await this.getDraft(draftId);
+
+    if (draft.status !== 'in_progress') {
+      throw new ValidationError('Draft must be in progress to auto-advance');
+    }
+
+    const nextPickNumber = draft.currentPick + 1;
+    const totalPicks = draft.draftOrder.length * 5; // 5 contestants per team
+
+    // Check if draft is actually complete (all teams have 5 picks each)
+    const isComplete = await this.isDraftActuallyComplete(draft);
+    const newStatus: DraftStatus = isComplete ? 'completed' : 'in_progress';
+
+    // If we've gone through all theoretical picks but draft isn't complete, 
+    // we need to continue until everyone has 5 picks
+    const shouldContinue = nextPickNumber > totalPicks && !isComplete;
+    const finalPickNumber = shouldContinue ? nextPickNumber : (isComplete ? draft.currentPick : nextPickNumber);
+
+    // Update the draft to advance to next pick
+    const updateData: UpdateDraftData = {
+      id: draftId,
+      status: newStatus,
+      currentPick: finalPickNumber,
+      currentTurnStartedAt: isComplete ? undefined : new Date().toISOString(), // Set new turn start time
+    };
+
+    const updatedDraft = await this.withRetry(async () => {
+      const response = await this.client.models.Draft.update(updateData);
+
+      if (!response.data) {
+        throw new NotFoundError('Draft', draftId);
+      }
+
       return this.transformDraftModel(response.data);
     });
+
+    // Send notifications for the auto-advance
+    try {
+      // Get the team that was skipped
+      const skippedTeamId = this.getCurrentTeamId(draft);
+      if (skippedTeamId) {
+        const skippedTeamResponse = await this.client.models.Team.get({ id: skippedTeamId });
+        const skippedTeamName = skippedTeamResponse.data?.name || 'Unknown Team';
+
+        // Notify about the skipped turn
+        await realTimeNotificationService.notifyDraftTurnSkipped(draft.leagueId, skippedTeamName);
+      }
+
+      // If draft is complete, notify about completion
+      if (isComplete) {
+        const leagueResponse = await this.client.models.League.get({ id: draft.leagueId });
+        const leagueName = leagueResponse.data?.name || 'Unknown League';
+        await realTimeNotificationService.notifyDraftCompleted(draft.leagueId, leagueName);
+      } else {
+        // Notify the next team it's their turn
+        const nextTeamId = this.getCurrentTeamId(updatedDraft);
+        if (nextTeamId) {
+          const nextTeamResponse = await this.client.models.Team.get({ id: nextTeamId });
+          const nextTeamName = nextTeamResponse.data?.name || 'Unknown Team';
+          const timeRemaining = (updatedDraft.settings.pickTimeLimit || 120) * 1000; // Convert to milliseconds
+          
+          // Get the team owner ID for targeted notification
+          const teamOwnerId = nextTeamResponse.data?.ownerId;
+          await realTimeNotificationService.notifyDraftTurn(draft.leagueId, nextTeamName, timeRemaining, teamOwnerId);
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to send auto-advance notifications:', error);
+    }
+
+    return updatedDraft;
   }
 
   /**
@@ -149,10 +245,12 @@ export class DraftService extends BaseService {
 
     const updatedPicks = [...draft.picks, newPick];
     const nextPickNumber = draft.currentPick + 1;
-    const totalPicks = draft.draftOrder.length * 5; // 5 contestants per team
 
-    // Determine if draft is complete
-    const isComplete = nextPickNumber > totalPicks;
+    // Create a temporary draft with the new pick to check completion
+    const tempDraft = { ...draft, picks: updatedPicks };
+    
+    // Determine if draft is complete (all teams have 5 picks each)
+    const isComplete = await this.isDraftActuallyComplete(tempDraft);
     const newStatus: DraftStatus = isComplete ? 'completed' : 'in_progress';
 
     // Update the draft
@@ -160,6 +258,7 @@ export class DraftService extends BaseService {
       id: input.draftId,
       status: newStatus,
       currentPick: isComplete ? draft.currentPick : nextPickNumber,
+      currentTurnStartedAt: isComplete ? undefined : new Date().toISOString(), // Set new turn start time
       picks: JSON.stringify(updatedPicks),
     };
 
@@ -175,6 +274,41 @@ export class DraftService extends BaseService {
 
     // Update team's drafted contestants
     await this.updateTeamDraftedContestants(input.teamId, input.contestantId);
+
+    // Send notifications for the pick
+    try {
+      const [teamResponse, contestantResponse] = await Promise.all([
+        this.client.models.Team.get({ id: input.teamId }),
+        this.client.models.Contestant.get({ id: input.contestantId })
+      ]);
+
+      const teamName = teamResponse.data?.name || 'Unknown Team';
+      const contestantName = contestantResponse.data?.name || 'Unknown Contestant';
+
+      // Notify about the pick (real-time GraphQL)
+      await realTimeNotificationService.notifyDraftPickMade(draft.leagueId, teamName, contestantName);
+
+      // If draft is complete, notify about completion
+      if (isComplete) {
+        const leagueResponse = await this.client.models.League.get({ id: draft.leagueId });
+        const leagueName = leagueResponse.data?.name || 'Unknown League';
+        await realTimeNotificationService.notifyDraftCompleted(draft.leagueId, leagueName);
+      } else {
+        // Notify the next team it's their turn
+        const nextTeamId = this.getCurrentTeamId(updatedDraft);
+        if (nextTeamId) {
+          const nextTeamResponse = await this.client.models.Team.get({ id: nextTeamId });
+          const nextTeamName = nextTeamResponse.data?.name || 'Unknown Team';
+          const timeRemaining = (updatedDraft.settings.pickTimeLimit || 120) * 1000; // Convert to milliseconds
+          
+          // Get the team owner ID for targeted notification
+          const teamOwnerId = nextTeamResponse.data?.ownerId;
+          await realTimeNotificationService.notifyDraftTurn(draft.leagueId, nextTeamName, timeRemaining, teamOwnerId);
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to send draft notifications:', error);
+    }
 
     return updatedDraft;
   }
@@ -307,6 +441,30 @@ export class DraftService extends BaseService {
   }
 
   /**
+   * Check if draft is actually complete (all teams have 5 picks each)
+   */
+  async isDraftActuallyComplete(draft: Draft): Promise<boolean> {
+    // Get all teams in the league
+    const teamsResponse = await this.client.models.Team.list({
+      filter: { leagueId: { eq: draft.leagueId } }
+    });
+
+    if (!teamsResponse.data) {
+      return false;
+    }
+
+    // Check if every team has exactly 5 picks
+    for (const team of teamsResponse.data) {
+      const teamPicks = this.getTeamPicks(draft, team.id);
+      if (teamPicks.length < 5) {
+        return false; // This team doesn't have 5 picks yet
+      }
+    }
+
+    return true; // All teams have 5 picks
+  }
+
+  /**
    * Get draft status summary
    */
   getDraftStatus(draft: Draft): {
@@ -342,10 +500,29 @@ export class DraftService extends BaseService {
     }
 
     return this.withRetry(async () => {
+      // Get draft info before deletion for notification
+      const draftResponse = await this.client.models.Draft.get({ id: draftId });
+      const draft = draftResponse.data;
+      
+      if (!draft) {
+        throw new NotFoundError('Draft', draftId);
+      }
+
+      // Delete the draft
       const response = await this.client.models.Draft.delete({ id: draftId });
 
       if (!response.data) {
         throw new NotFoundError('Draft', draftId);
+      }
+
+      // Notify all users that the draft was deleted
+      try {
+        const leagueResponse = await this.client.models.League.get({ id: draft.leagueId });
+        const leagueName = leagueResponse.data?.name || 'Unknown League';
+        
+        await realTimeNotificationService.notifyDraftDeleted(draft.leagueId, leagueName);
+      } catch (error) {
+        console.warn('Failed to send draft deletion notification:', error);
       }
     });
   }
@@ -463,6 +640,7 @@ export class DraftService extends BaseService {
       leagueId: model.leagueId,
       status: (model.status as DraftStatus) || 'not_started',
       currentPick: model.currentPick || 0,
+      currentTurnStartedAt: model.currentTurnStartedAt || undefined,
       draftOrder: (model.draftOrder || []).filter((id): id is string => id !== null),
       picks,
       settings,

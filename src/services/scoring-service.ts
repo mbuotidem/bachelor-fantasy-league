@@ -2,6 +2,7 @@ import { BaseService, ValidationError, NotFoundError } from './base-service';
 import type { Schema } from '../lib/api-client';
 import type { ScoringEvent, ScoreActionInput, Episode } from '../types';
 import { standingsEvents } from '../lib/standings-events';
+import { realTimeNotificationService } from './real-time-notification-service';
 
 // Type definitions for GraphQL operations
 type ScoringEventModel = Schema['ScoringEvent']['type'];
@@ -132,7 +133,16 @@ export class ScoringService extends BaseService {
         throw new NotFoundError('Episode', episodeId);
       }
 
-      return this.transformEpisodeModel(response.data);
+      const updatedEpisode = this.transformEpisodeModel(response.data);
+
+      // Notify about episode starting (real-time GraphQL)
+      try {
+        await realTimeNotificationService.notifyEpisodeStarted(episode.leagueId, episode.episodeNumber);
+      } catch (error) {
+        console.warn('Failed to send episode started notification:', error);
+      }
+
+      return updatedEpisode;
     });
   }
 
@@ -178,6 +188,17 @@ export class ScoringService extends BaseService {
           points: input.points,
           actionType: input.actionType
         });
+
+        // Get contestant name and league ID for notification
+        const contestantResponse = await this.client.models.Contestant.get({ id: input.contestantId });
+        const episodeResponse = await this.client.models.Episode.get({ id: input.episodeId });
+        
+        if (contestantResponse.data && episodeResponse.data) {
+          const contestantName = contestantResponse.data.name;
+          const leagueId = episodeResponse.data.leagueId;
+          
+          await realTimeNotificationService.notifyScoringEvent(leagueId, contestantName, input.points, input.actionType);
+        }
       } catch (error) {
         console.warn('Failed to emit scoring event notification:', error);
       }

@@ -7,6 +7,7 @@ import ContestantCard from './ContestantCard';
 import DraftTimer from './DraftTimer';
 import TeamRoster from './TeamRoster';
 import DraftDebug from './DraftDebug';
+import { useDataRefresh } from '../contexts/DataRefreshContext';
 
 interface DraftBoardProps {
   leagueId: string;
@@ -93,6 +94,7 @@ export default function DraftBoard({ leagueId, currentUserId, isCommissioner = f
   const [error, setError] = useState<string | null>(null);
   const [makingPick, setMakingPick] = useState(false);
   const [showDebug, setShowDebug] = useState(false);
+  const { registerDraftDataRefresh, unregisterDraftDataRefresh } = useDataRefresh();
 
   const loadDraftData = useCallback(async () => {
     try {
@@ -123,14 +125,22 @@ export default function DraftBoard({ leagueId, currentUserId, isCommissioner = f
     loadDraftData();
   }, [loadDraftData]);
 
-  // Set up polling for live updates during active draft
+  // Register this component's refresh function with the global context
+  useEffect(() => {
+    registerDraftDataRefresh(loadDraftData);
+    return () => {
+      unregisterDraftDataRefresh(loadDraftData);
+    };
+  }, [loadDraftData, registerDraftDataRefresh, unregisterDraftDataRefresh]);
+
+  // Set up polling for live updates during active draft (reduced frequency since we have real-time updates)
   useEffect(() => {
     if (draft?.status === 'in_progress') {
       const interval = setInterval(() => {
         if (!document.hidden) {
           loadDraftData();
         }
-      }, 10000); // Poll every 10 seconds during active draft
+      }, 30000); // Poll every 30 seconds as backup (real-time updates handle most cases)
 
       return () => clearInterval(interval);
     }
@@ -455,9 +465,28 @@ export default function DraftBoard({ leagueId, currentUserId, isCommissioner = f
               timeLimit={draft.settings.pickTimeLimit}
               isActive={draft.status === 'in_progress'}
               currentTurnId={currentTeamId || undefined}
-              onTimeExpired={() => {
-                // Handle auto-pick or time expiration
-                console.log('Time expired for pick');
+              currentTurnStartedAt={draft.currentTurnStartedAt}
+              isMyTurn={isMyTurn}
+              currentTeamName={currentTeam?.name}
+              onTimeExpired={async () => {
+                console.log('Time expired - auto-advancing draft');
+                try {
+                  // Auto-advance to next team when time expires
+                  const updatedDraft = await draftService.autoAdvanceDraft(draft.id);
+                  setDraft(updatedDraft);
+
+                  // Reload contestants to update availability
+                  const updatedContestants = await draftService.getAvailableContestants(leagueId, updatedDraft.id);
+                  setContestants(updatedContestants);
+
+                  // Check if draft is complete
+                  if (updatedDraft.status === 'completed') {
+                    onDraftComplete?.(updatedDraft);
+                  }
+                } catch (error) {
+                  console.error('Auto-advance failed:', error);
+                  setError('Failed to advance draft. Please refresh the page.');
+                }
               }}
             />
           </div>

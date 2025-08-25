@@ -8,6 +8,8 @@ export { DraftService } from './draft-service';
 export { StandingsService } from './standings-service';
 export { UserService } from './user-service';
 export { UserMigrationService } from './user-migration-service';
+export { notificationService } from './notification-service';
+export { realTimeNotificationService } from './real-time-notification-service';
 
 // Export service input/output types
 export type { JoinLeagueInput, UpdateLeagueSettingsInput } from './league-service';
@@ -16,6 +18,8 @@ export type { UpdateContestantInput, EliminateContestantInput } from './contesta
 export type { UndoScoringInput, GetEpisodeScoresInput } from './scoring-service';
 export type { CreateDraftInput, MakePickInput } from './draft-service';
 export type { CreateUserInput, UpdateUserInput } from './user-service';
+export type { NotificationEvent, NotificationEventType, NotificationPreferences } from './notification-service';
+export type { NotificationEvent as RealTimeNotificationEvent, NotificationEventType as RealTimeNotificationEventType } from './real-time-notification-service';
 
 // Import service classes
 import { LeagueService } from './league-service';
